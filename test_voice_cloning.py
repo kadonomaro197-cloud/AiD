@@ -55,6 +55,36 @@ def test_voice_cloning():
         print("   Install with: pip install TTS")
         return False
 
+    # Check transformers version for compatibility
+    try:
+        import transformers
+        transformers_version = transformers.__version__
+        print(f"✓ Transformers available (Version: {transformers_version})")
+
+        # Fix transformers 4.50+ compatibility issue
+        version_parts = transformers_version.split('.')
+        major_minor = tuple(map(int, version_parts[:2]))
+        if major_minor >= (4, 50):
+            print(f"   ⚠️  Transformers {transformers_version} detected - applying compatibility patch...")
+
+            # Patch GPT2InferenceModel to add the missing generate method
+            try:
+                from transformers import GenerationMixin
+                from TTS.tts.layers.xtts.gpt import GPT2InferenceModel
+
+                # Add GenerationMixin to GPT2InferenceModel's base classes if not present
+                if GenerationMixin not in GPT2InferenceModel.__bases__:
+                    GPT2InferenceModel.__bases__ = (GenerationMixin,) + GPT2InferenceModel.__bases__
+                    print("   ✓ Applied transformers 4.50+ compatibility patch")
+                else:
+                    print("   ✓ GenerationMixin already present")
+            except Exception as e:
+                print(f"   ⚠️  Could not apply transformers patch: {e}")
+                print("   ℹ️  Consider downgrading: pip install transformers==4.46.3")
+    except ImportError:
+        print("⚠️  Transformers not found - TTS may not work properly")
+        print("   Install with: pip install transformers")
+
     # Check for PyTorch
     try:
         import torch

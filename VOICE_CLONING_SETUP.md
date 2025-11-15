@@ -10,6 +10,10 @@ This guide will help you set up voice cloning for AiD using Coqui TTS with XTTSv
 # Install Coqui TTS
 pip install TTS
 
+# Install compatible transformers version (if needed)
+# Note: The test script auto-patches transformers 4.50+, but you can also use:
+pip install transformers==4.46.3
+
 # Install PyTorch (choose based on your system)
 # For CPU only:
 pip install torch
@@ -122,6 +126,21 @@ pip install TTS
 1. Create the `voice_samples` directory
 2. Add WAV files of the voice you want to clone
 3. Ensure files have `.wav` extension
+
+### Error: "'GPT2InferenceModel' object has no attribute 'generate'"
+
+This is a compatibility issue between Coqui TTS and transformers v4.50+.
+
+**Root cause**: Transformers v4.50 removed the `generate` method from `PreTrainedModel`, requiring explicit inheritance from `GenerationMixin`.
+
+**Solution 1 (Recommended)**: The test script automatically applies a patch. Make sure you're using the latest `test_voice_cloning.py`.
+
+**Solution 2**: Downgrade transformers to a compatible version:
+```bash
+pip install transformers==4.46.3
+```
+
+**What the auto-fix does**: The test script detects transformers 4.50+ and dynamically adds `GenerationMixin` to `GPT2InferenceModel`'s base classes, restoring the `generate` method.
 
 ### Error: PyTorch 2.6 "Weights only load failed" or "Unsupported global: XttsConfig"
 
