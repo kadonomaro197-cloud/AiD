@@ -92,6 +92,15 @@ def test_voice_cloning():
         torch_version = torch.__version__
         print(f"✓ PyTorch available (Version: {torch_version}, Device: {device.upper()})")
 
+        # Warn if using CPU-only PyTorch
+        if "+cpu" in torch_version.lower() or not torch.cuda.is_available():
+            print(f"   ⚠️  WARNING: Using CPU for inference")
+            print(f"   ⚠️  Voice quality may be poor and generation will be slow")
+            print(f"   ℹ️  For better quality and 10-20x faster generation:")
+            print(f"   ℹ️  1. Check if you have NVIDIA GPU: nvidia-smi")
+            print(f"   ℹ️  2. Install CUDA PyTorch: pip uninstall torch torchvision torchaudio")
+            print(f"   ℹ️     then: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121")
+
         # Fix for PyTorch 2.6+ compatibility with Coqui TTS
         # PyTorch 2.6 changed torch.load to use weights_only=True by default
         # This breaks loading older TTS models, so we need to add safe globals
