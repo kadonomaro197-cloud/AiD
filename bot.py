@@ -886,40 +886,43 @@ Previous response was TOO LONG. Keep under 300 words this time.
 
     # Launch post-processing in background thread
     print("[DEBUG] After response processing, launching background post-processing")
-    import threading
-    post_process_thread = threading.Thread(target=post_process_response, daemon=True)
-    post_process_thread.start()
+    try:
+        import threading
+        post_process_thread = threading.Thread(target=post_process_response, daemon=True)
+        post_process_thread.start()
+    except Exception as e:
+        print(f"[WARN] Failed to start post-processing thread: {e}")
 
     end_time = time.time()
-    
+
     # === DEBUG LOGGING ===
-    debug_entry = {
-        "timestamp": datetime.now().isoformat(timespec="seconds"),
-        "message_number": message_counter,
-        "mode": mode,
-        "max_tokens": max_response_tokens,
-        "orchestrator_memories": len(orchestrator_memories),
-        "mode_reset_detected": bool(mode_reset),
-        "verbose_mode": conversation_state.get("verbose_mode", False),
-        "relationship_stage": relationship.get_current_stage(),
-        "intimacy_score": round(relationship.get_intimacy_score(), 1),
-        "emotional_state": emotional_context.get('current_emotion', {}).get('primary', {}).get('emotion', 'unknown'),
-        "response_mode": emotional_context.get('response_mode', 'default'),
-        "conversation_depth": conversation_strategy.get('depth_preference', 'moderate'),
-        "token_breakdown": context_data["token_breakdown"],
-        "response_time_seconds": round(end_time - start_time, 2),
-        "response_preview": reply[:300]
-    }
-    
-    if ADVANCED_INTELLIGENCE_LOADED:
-        debug_entry["advanced_systems"] = {
-            "vulnerability_level": vulnerability_context.get('level', 'none'),
-            "strategic_silence": silence_context.get('should_be_brief', False),
-            "disagreement_active": bool(disagreement_context),
-            "socratic_mode": socratic_active
+    try:
+        debug_entry = {
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "message_number": message_counter,
+            "mode": mode,
+            "max_tokens": max_response_tokens,
+            "orchestrator_memories": len(orchestrator_memories),
+            "mode_reset_detected": bool(mode_reset),
+            "verbose_mode": conversation_state.get("verbose_mode", False),
+            "relationship_stage": relationship.get_current_stage() if PERSONA_SYSTEMS_LOADED else "unknown",
+            "intimacy_score": round(relationship.get_intimacy_score(), 1) if PERSONA_SYSTEMS_LOADED else 0,
+            "emotional_state": emotional_context.get('current_emotion', {}).get('primary', {}).get('emotion', 'unknown'),
+            "response_mode": emotional_context.get('response_mode', 'default'),
+            "conversation_depth": conversation_strategy.get('depth_preference', 'moderate'),
+            "token_breakdown": context_data["token_breakdown"],
+            "response_time_seconds": round(end_time - start_time, 2),
+            "response_preview": reply[:300]
         }
 
-    try:
+        if ADVANCED_INTELLIGENCE_LOADED:
+            debug_entry["advanced_systems"] = {
+                "vulnerability_level": vulnerability_context.get('level', 'none'),
+                "strategic_silence": silence_context.get('should_be_brief', False),
+                "disagreement_active": bool(disagreement_context),
+                "socratic_mode": socratic_active
+            }
+
         if os.path.exists(DEBUG_LOG_FILE):
             with open(DEBUG_LOG_FILE, "r", encoding="utf-8") as f:
                 logs = json.load(f)
@@ -932,12 +935,22 @@ Previous response was TOO LONG. Keep under 300 words this time.
             json.dump(logs, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"[WARN] Failed to save debug log: {e}")
+        traceback.print_exc()
 
     # Console output
     print(f"[INFO] Response in {end_time - start_time:.2f}s | Mode: {mode.upper()}")
     print(f"       [ORCHESTRATOR] Memories used: {len(orchestrator_memories)}")
-    print(f"       [MEMORY] Runtime: {memory.get_runtime_size()} | STM: {len(mem_stm.get_all())}")
-    print(f"       [RELATIONSHIP] Stage: {relationship.get_current_stage()} | Intimacy: {relationship.get_intimacy_score():.0f}/100")
+
+    # Defensive logging - catch errors to prevent blocking response
+    try:
+        print(f"       [MEMORY] Runtime: {memory.get_runtime_size()} | STM: {len(mem_stm.get_all())}")
+    except Exception as e:
+        print(f"       [MEMORY] Error getting stats: {e}")
+
+    try:
+        print(f"       [RELATIONSHIP] Stage: {relationship.get_current_stage()} | Intimacy: {relationship.get_intimacy_score():.0f}/100")
+    except Exception as e:
+        print(f"       [RELATIONSHIP] Error getting stats: {e}")
 
     print(f"[DEBUG] About to return reply: {len(reply)} chars")
     return reply
