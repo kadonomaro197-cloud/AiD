@@ -151,7 +151,12 @@ export TORCH_LOAD_WEIGHTS_ONLY=0
 python test_voice_cloning.py
 ```
 
-**What the auto-fix does**: The test script detects PyTorch 2.6+ and automatically adds TTS config classes to PyTorch's safe globals list, allowing the model to load securely.
+**What the auto-fix does**: The test script uses a two-layer approach:
+1. First, it registers known TTS config classes to PyTorch's safe globals
+2. Then, it temporarily patches `torch.load` to use `weights_only=False` during model loading
+3. Finally, it restores the original `torch.load` function
+
+This comprehensive approach handles all TTS classes automatically without requiring manual enumeration of every config class.
 
 ### CUDA/GPU Issues
 
