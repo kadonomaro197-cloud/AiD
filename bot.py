@@ -884,6 +884,20 @@ Previous response was TOO LONG. Keep under 300 words this time.
         except Exception as e:
             print(f"[RELATIONSHIP] Warning: {e}")
 
+    # === GET STATS BEFORE STARTING BACKGROUND THREAD (to avoid deadlock) ===
+    print("[DEBUG_TRACE] Getting stats BEFORE background thread to avoid deadlock")
+    try:
+        runtime_size_snapshot = memory.get_runtime_size()
+        stm_size_snapshot = len(mem_stm.get_all())
+        current_stage_snapshot = relationship.get_current_stage()
+        intimacy_snapshot = relationship.get_intimacy_score()
+        print(f"[DEBUG_TRACE] Stats captured: runtime={runtime_size_snapshot}, stm={stm_size_snapshot}, stage={current_stage_snapshot}, intimacy={intimacy_snapshot}")
+    except Exception as e:
+        print(f"[WARN] Failed to capture stats snapshot: {e}")
+        runtime_size_snapshot = stm_size_snapshot = 0
+        current_stage_snapshot = "unknown"
+        intimacy_snapshot = 0
+
     # Launch post-processing in background thread
     print("[DEBUG] After response processing, launching background post-processing")
     try:
@@ -899,15 +913,7 @@ Previous response was TOO LONG. Keep under 300 words this time.
     # === DEBUG LOGGING ===
     print(f"[DEBUG_TRACE] About to create debug_entry dictionary")
     try:
-        print(f"[DEBUG_TRACE] Creating debug_entry - getting relationship stage")
-        rel_stage = relationship.get_current_stage() if PERSONA_SYSTEMS_LOADED else "unknown"
-        print(f"[DEBUG_TRACE] Got relationship stage: {rel_stage}")
-
-        print(f"[DEBUG_TRACE] Creating debug_entry - getting intimacy score")
-        intimacy_val = round(relationship.get_intimacy_score(), 1) if PERSONA_SYSTEMS_LOADED else 0
-        print(f"[DEBUG_TRACE] Got intimacy score: {intimacy_val}")
-
-        print(f"[DEBUG_TRACE] Assembling debug_entry dictionary")
+        print(f"[DEBUG_TRACE] Using pre-captured snapshots for debug_entry (no lock contention)")
         debug_entry = {
             "timestamp": datetime.now().isoformat(timespec="seconds"),
             "message_number": message_counter,
@@ -916,8 +922,8 @@ Previous response was TOO LONG. Keep under 300 words this time.
             "orchestrator_memories": len(orchestrator_memories),
             "mode_reset_detected": bool(mode_reset),
             "verbose_mode": conversation_state.get("verbose_mode", False),
-            "relationship_stage": rel_stage,
-            "intimacy_score": intimacy_val,
+            "relationship_stage": current_stage_snapshot,
+            "intimacy_score": round(intimacy_snapshot, 1),
             "emotional_state": emotional_context.get('current_emotion', {}).get('primary', {}).get('emotion', 'unknown'),
             "response_mode": emotional_context.get('response_mode', 'default'),
             "conversation_depth": conversation_strategy.get('depth_preference', 'moderate'),
@@ -963,40 +969,14 @@ Previous response was TOO LONG. Keep under 300 words this time.
 
     print(f"[DEBUG_TRACE] Exited debug logging block")
 
-    # Console output
+    # Console output (using pre-captured snapshots to avoid deadlock)
     print(f"[INFO] Response in {end_time - start_time:.2f}s | Mode: {mode.upper()}")
-    print(f"[DEBUG_TRACE] Step 1: About to print orchestrator memories")
     print(f"       [ORCHESTRATOR] Memories used: {len(orchestrator_memories)}")
-    print(f"[DEBUG_TRACE] Step 2: Orchestrator line printed successfully")
+    print(f"       [MEMORY] Runtime: {runtime_size_snapshot} | STM: {stm_size_snapshot}")
+    print(f"       [RELATIONSHIP] Stage: {current_stage_snapshot} | Intimacy: {intimacy_snapshot:.0f}/100")
 
-    # Defensive logging - catch errors to prevent blocking response
-    print(f"[DEBUG_TRACE] Step 3: About to get memory stats")
-    try:
-        runtime_size = memory.get_runtime_size()
-        print(f"[DEBUG_TRACE] Step 3a: Got runtime_size = {runtime_size}")
-        stm_all = mem_stm.get_all()
-        print(f"[DEBUG_TRACE] Step 3b: Got stm_all, length = {len(stm_all)}")
-        print(f"       [MEMORY] Runtime: {runtime_size} | STM: {len(stm_all)}")
-        print(f"[DEBUG_TRACE] Step 3c: Memory stats printed successfully")
-    except Exception as e:
-        print(f"[MEMORY] Error getting stats: {e}")
-        traceback.print_exc()
-
-    print(f"[DEBUG_TRACE] Step 4: About to get relationship stats")
-    try:
-        current_stage = relationship.get_current_stage()
-        print(f"[DEBUG_TRACE] Step 4a: Got current_stage = {current_stage}")
-        intimacy = relationship.get_intimacy_score()
-        print(f"[DEBUG_TRACE] Step 4b: Got intimacy = {intimacy}")
-        print(f"       [RELATIONSHIP] Stage: {current_stage} | Intimacy: {intimacy:.0f}/100")
-        print(f"[DEBUG_TRACE] Step 4c: Relationship stats printed successfully")
-    except Exception as e:
-        print(f"[RELATIONSHIP] Error getting stats: {e}")
-        traceback.print_exc()
-
-    print(f"[DEBUG_TRACE] Step 5: About to print return statement")
     print(f"[DEBUG] About to return reply: {len(reply)} chars")
-    print(f"[DEBUG_TRACE] Step 6: Executing return statement NOW")
+    print(f"[DEBUG_TRACE] Returning reply to auto_response.py")
     return reply
 
 # =======================
