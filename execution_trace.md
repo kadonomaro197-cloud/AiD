@@ -323,11 +323,38 @@ Because `call_aid_api` runs in a `ThreadPoolExecutor`, if it crashes:
 
 ---
 
-## 🔍 NEXT DEBUGGING STEPS
+## 🔍 ROOT CAUSE IDENTIFIED
 
-### Immediate Actions:
+### The Deadlock
 
-1. **Restart the bot with updated code** - Ensure my defensive error handling is active
-2. **Check if the process crashes** - Look for segfaults in system logs
-3. **Add more granular logging** - Add print statements between every line in the critical zone
-4. **Test memory.get_runtime_size() directly** - See if it hangs or crashes
+The crash was caused by a **threading deadlock** in `_runtime_lock`:
+
+1. `call_aid_api()` launches `post_process_response()` in background thread (line 891)
+2. Background thread calls `memory.add_to_runtime()` which acquires `_runtime_lock`
+3. Main thread (still in `call_aid_api`) tries to call `memory.get_runtime_size()` (line 975)
+4. `memory.get_runtime_size()` tries to acquire `_runtime_lock`
+5. **DEADLOCK** - Main thread waits forever for lock held by background thread
+6. Function never returns, Discord never gets response
+
+### The Fix (Commit: dcca47e)
+
+**Capture stats BEFORE launching background thread:**
+- Get `runtime_size_snapshot = memory.get_runtime_size()` BEFORE thread creation
+- Get `stm_size_snapshot`, `current_stage_snapshot`, `intimacy_snapshot` as well
+- Use snapshots for all subsequent logging
+- **No lock contention = No deadlock**
+
+### Testing
+
+Restart bot and send "Hey AiD" - should now see:
+```
+[DEBUG_TRACE] Getting stats BEFORE background thread to avoid deadlock
+[DEBUG_TRACE] Stats captured: runtime=199, stm=199, stage=mid, intimacy=55.2
+[DEBUG] After response processing, launching background post-processing
+[DEBUG_TRACE] End time captured: ...
+...
+[DEBUG] About to return reply: 32 chars
+[DEBUG_TRACE] Returning reply to auto_response.py
+```
+
+Response should successfully reach Discord!
