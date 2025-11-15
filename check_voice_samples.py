@@ -1,9 +1,15 @@
 """
 Voice Sample Quality Checker
 Analyzes voice samples for optimal XTTS voice cloning
+
+Usage:
+    python check_voice_samples.py                    # Interactive mode
+    python check_voice_samples.py voice_samples      # Check specific directory
+    python check_voice_samples.py voice_samples_processed
 """
 
 import os
+import sys
 from pathlib import Path
 import wave
 import numpy as np
@@ -135,7 +141,25 @@ def main():
     print("Voice Sample Quality Analyzer")
     print("=" * 70)
 
-    voice_samples_dir = Path("voice_samples")
+    # Allow user to specify directory
+    if len(sys.argv) > 1:
+        voice_samples_dir = Path(sys.argv[1])
+    else:
+        print("\nWhich directory would you like to check?")
+        print("  1. voice_samples (original)")
+        print("  2. voice_samples_processed (processed)")
+        print("  3. Custom directory")
+        choice = input("\nEnter choice (1-3, default=1): ").strip() or "1"
+
+        if choice == "2":
+            voice_samples_dir = Path("voice_samples_processed")
+        elif choice == "3":
+            custom_dir = input("Enter directory path: ").strip()
+            voice_samples_dir = Path(custom_dir)
+        else:
+            voice_samples_dir = Path("voice_samples")
+
+    print(f"\nChecking: {voice_samples_dir}")
 
     if not voice_samples_dir.exists():
         print(f"\n❌ Directory not found: {voice_samples_dir}")
