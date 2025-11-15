@@ -1,0 +1,74 @@
+# AiD - AI Discord Bot with Voice Integration
+# Requirements for full functionality
+
+# ===== Core Discord Bot =====
+discord.py>=2.3.0
+requests>=2.31.0
+
+# ===== Voice System =====
+# TTS (Text-to-Speech) with voice cloning
+TTS>=0.22.0                    # Coqui TTS for XTTSv2
+torch>=2.0.0                   # PyTorch for TTS model
+torchaudio>=2.0.0              # Audio processing for PyTorch
+
+# STT (Speech-to-Text)
+openai-whisper>=20231117       # OpenAI Whisper for transcription
+
+# Audio processing
+sounddevice>=0.4.6             # Audio I/O
+soundfile>=0.12.1              # Audio file reading/writing
+numpy>=1.24.0                  # Numerical operations
+scipy>=1.10.0                  # Scientific computing (for audio resampling)
+
+# FFmpeg is required for Discord voice and audio conversion
+# Install separately:
+#   Ubuntu/Debian: sudo apt-get install ffmpeg
+#   macOS: brew install ffmpeg
+#   Windows: Download from https://ffmpeg.org/download.html
+
+# PyNaCl for Discord voice (required by discord.py for voice)
+PyNaCl>=1.5.0
+
+# ===== Memory & RAG System =====
+faiss-cpu>=1.7.4              # FAISS for semantic search (use faiss-gpu if you have CUDA)
+sentence-transformers>=2.2.0   # Embedding models
+scikit-learn>=1.3.0           # Machine learning utilities
+
+# ===== Optional but Recommended =====
+# If you want GPU acceleration for FAISS, use:
+# faiss-gpu>=1.7.4
+
+# ===== Development & Testing =====
+pytest>=7.4.0                  # Testing framework
+flake8>=6.1.0                  # Linting
+
+# ===== Utilities =====
+python-dotenv>=1.0.0          # Environment variable management (recommended)
+colorama>=0.4.6                # Colored terminal output (optional)
+
+# ===== Python Version =====
+# Requires Python 3.9+
+# Tested on Python 3.11.14
+
+# ===== Installation Notes =====
+# 1. Install Python 3.9 or higher
+# 2. Install FFmpeg (see above)
+# 3. Create virtual environment:
+#    python -m venv venv
+#    source venv/bin/activate  # On Windows: venv\Scripts\activate
+# 4. Install requirements:
+#    pip install -r requirements.txt
+# 5. Place voice samples in voice_samples/ directory
+# 6. Configure Discord bot token in bot.py or .env file
+# 7. Run: python bot.py
+
+# ===== GPU Support (Optional) =====
+# For faster TTS/STT processing, install CUDA-enabled PyTorch:
+# pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
+# Replace cu118 with your CUDA version (cu118 for CUDA 11.8, cu121 for CUDA 12.1, etc.)
+
+# ===== Known Issues =====
+# - TTS model download may take time on first run (~2GB)
+# - Whisper models will download on first use
+# - Ensure sufficient disk space (~5GB for all models)
+# - GPU with 8GB+ VRAM recommended for best performance

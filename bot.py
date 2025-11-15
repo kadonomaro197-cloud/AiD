@@ -210,6 +210,27 @@ except Exception as e:
     PERSONA_SYSTEMS_LOADED = False
     ADVANCED_INTELLIGENCE_LOADED = False
 
+# =======================
+# VOICE SYSTEM INITIALIZATION
+# =======================
+VOICE_SYSTEM_LOADED = False
+voice_manager = None
+
+try:
+    print(f"\n[VOICE] Initializing voice system...")
+    import voice_handler
+
+    # Voice will be fully initialized in on_ready (after bot is ready)
+    # For now, just import the module
+    print(f"[VOICE] Ã¢Å"â€œ Voice handler module loaded")
+    VOICE_SYSTEM_LOADED = True
+
+except Exception as e:
+    print(f"[VOICE] Ã¢Å¡Â  Warning: Voice system failed to load: {e}")
+    print(f"[VOICE] Continuing without voice features...")
+    traceback.print_exc()
+    VOICE_SYSTEM_LOADED = False
+
 print("=" * 60)
 print("[ONLINE] AID is ONLINE and ready to roll, boss!")
 print("   Cockney sass: [OK]  Memory system: [OK]  RAG database: [OK]")
@@ -225,6 +246,10 @@ if ADVANCED_INTELLIGENCE_LOADED:
     print("   Ã¢â€Å“Ã¢â€â‚¬ Strategic Silence: [OK] Ã¢â€â€Ã¢â€â‚¬ Disagreement Engine: [OK]")
 else:
     print("   Persona system: [LIMITED]")
+if VOICE_SYSTEM_LOADED:
+    print("   Voice System: [OK] (TTS/STT ready)")
+else:
+    print("   Voice System: [DISABLED]")
 print("   Context window: 8k tokens (optimized for 8GB VRAM)")
 print("   Mode system: [OK] (CHAT/MEMORY/RAG auto-detection)")
 print("   Type 'AID create a memory' or just chat away!")
@@ -424,6 +449,41 @@ def call_aid_api(user_message, rag_context_text="", memory_context_text=""):
     print(f"\n{'='*60}")
     print(f"[CALL #{message_counter}] Processing: '{user_message[:50]}...'")
     
+    # ===========================================
+    # VOICE COMMAND DETECTION
+    # ===========================================
+    voice_join_patterns = [
+        r'\bswitch to voice\b',
+        r'\bgo to voice\b',
+        r'\bjoin voice\b',
+        r'\bvoice mode\b',
+        r'\bvoice channel\b'
+    ]
+
+    voice_leave_patterns = [
+        r'\bback to chat\b',
+        r'\bback to text\b',
+        r'\bleave voice\b',
+        r'\bexit voice\b',
+        r'\btext mode\b'
+    ]
+
+    msg_lower = user_message.lower()
+
+    # Check for voice join command
+    for pattern in voice_join_patterns:
+        if re.search(pattern, msg_lower):
+            print(f"[VOICE] Detected voice join command: '{user_message}'")
+            # Return a special flag to trigger voice join in message handler
+            return {"voice_command": "join", "original_message": user_message}
+
+    # Check for voice leave command
+    for pattern in voice_leave_patterns:
+        if re.search(pattern, msg_lower):
+            print(f"[VOICE] Detected voice leave command: '{user_message}'")
+            # Return a special flag to trigger voice leave in message handler
+            return {"voice_command": "leave", "original_message": user_message}
+
     # ===========================================
     # MODE RESET & VERBOSE DETECTION
     # ===========================================
@@ -955,9 +1015,20 @@ state["conversation_state"] = conversation_state
 # =======================
 @bot.event
 async def on_ready():
+    global voice_manager
     print(f"[DISCORD] [OK] {bot.user} is now connected and ready!")
     print(f"[DISCORD] Connected to {len(bot.guilds)} server(s)")
     await startup_checks()
+
+    # Initialize voice system with bot instance
+    if VOICE_SYSTEM_LOADED:
+        try:
+            print("[VOICE] Initializing voice system with bot instance...")
+            status = voice_handler.init_voice(bot)
+            voice_manager = voice_handler.get_voice_manager()
+            print(f"[VOICE] Voice system ready - TTS: {status['tts']}, STT: {status['stt']}")
+        except Exception as e:
+            print(f"[VOICE] Failed to initialize voice system: {e}")
 
 @bot.event
 async def on_error(event, *args, **kwargs):
@@ -1154,6 +1225,96 @@ async def run_maintenance_command(ctx):
 
 # (Keep all your other existing commands - ping, memory_stats, clear_stm, etc.)
 # I'm omitting them here for brevity, but they should all remain unchanged
+
+# =======================
+# VOICE COMMANDS
+# =======================
+@bot.command(name='join_voice')
+async def join_voice_command(ctx):
+    """Join the voice channel that the user is in."""
+    if not VOICE_SYSTEM_LOADED or not voice_manager:
+        await ctx.send("Ã¢ÂÅ' Voice system not available. Check installation.")
+        return
+
+    # Check if user is in a voice channel
+    if not ctx.author.voice:
+        await ctx.send("Ã¢ÂÅ' You need to be in a voice channel first, mate!")
+        return
+
+    user_voice_channel = ctx.author.voice.channel
+
+    try:
+        await ctx.send(f"Ã°Å¸Å½Â¤ Joining voice channel: **{user_voice_channel.name}**...")
+
+        # Join the voice channel
+        success = await voice_manager.join_voice(user_voice_channel, ctx.channel)
+
+        if success:
+            # Send confirmation in voice and text
+            await voice_manager.speak("Voice mode enabled, boss! I can hear you now!")
+            await ctx.send("Ã¢Å"â€¦ Connected to voice! Speak away, and I'll respond in voice and text!")
+        else:
+            await ctx.send("Ã¢ÂÅ' Failed to join voice channel. Check the logs.")
+
+    except Exception as e:
+        await ctx.send(f"Ã¢ÂÅ' Error joining voice: {e}")
+        print(f"[VOICE] Error in join_voice_command: {e}")
+
+
+@bot.command(name='leave_voice')
+async def leave_voice_command(ctx):
+    """Leave the current voice channel."""
+    if not VOICE_SYSTEM_LOADED or not voice_manager:
+        await ctx.send("Ã¢ÂÅ' Voice system not available.")
+        return
+
+    if not voice_manager.is_in_voice_channel():
+        await ctx.send("Ã¢ÂÅ' I'm not in a voice channel, mate!")
+        return
+
+    try:
+        # Send goodbye message
+        await voice_manager.speak("Voice mode disabled. Back to text chat!")
+        await ctx.send("Ã°Å¸â€™â€¹ Leaving voice channel...")
+
+        # Leave the voice channel
+        success = await voice_manager.leave_voice()
+
+        if success:
+            await ctx.send("Ã¢Å"â€¦ Left voice channel. Back to text chat only!")
+        else:
+            await ctx.send("Ã¢ÂÅ' Error leaving voice channel.")
+
+    except Exception as e:
+        await ctx.send(f"Ã¢ÂÅ' Error leaving voice: {e}")
+        print(f"[VOICE] Error in leave_voice_command: {e}")
+
+
+@bot.command(name='voice_status')
+async def voice_status_command(ctx):
+    """Check voice system status."""
+    if not VOICE_SYSTEM_LOADED:
+        await ctx.send("Ã¢ÂÅ' Voice system not loaded.")
+        return
+
+    status = voice_handler.is_voice_available()
+
+    embed = discord.Embed(
+        title="Ã°Å¸Å½Â¤ Voice System Status",
+        color=discord.Color.green() if status['tts'] and status['stt'] else discord.Color.yellow()
+    )
+
+    embed.add_field(name="TTS (Text-to-Speech)", value="Ã¢Å"â€¦ Enabled" if status['tts'] else "Ã¢ÂÅ' Disabled", inline=True)
+    embed.add_field(name="STT (Speech-to-Text)", value="Ã¢Å"â€¦ Enabled" if status['stt'] else "Ã¢ÂÅ' Disabled", inline=True)
+    embed.add_field(name="Discord Integration", value="Ã¢Å"â€¦ Ready" if status['discord'] else "Ã¢ÂÅ' Not Ready", inline=True)
+    embed.add_field(name="In Voice Channel", value="Ã¢Å"â€¦ Yes" if status['in_voice_channel'] else "Ã¢ÂÅ' No", inline=True)
+
+    if voice_manager and voice_manager.is_in_voice_channel():
+        channel_name = voice_manager.discord_voice.current_channel.name
+        embed.add_field(name="Current Channel", value=channel_name, inline=False)
+
+    await ctx.send(embed=embed)
+
 
 # =======================
 # GRACEFUL SHUTDOWN (WITH ORCHESTRATOR)

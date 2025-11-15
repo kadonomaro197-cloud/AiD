@@ -234,9 +234,49 @@ def register_handlers(bot, call_aid_api_override=None):
         loop = asyncio.get_event_loop()
         reply = None  # Ensure defined
 
+        # ===================================================
+        # VOICE COMMAND HANDLING
+        # ===================================================
         try:
-            # --- Toggle back to chat mode ---
-            if content.lower() == "back to the chat":
+            import sys
+            bot_mod = sys.modules.get("__main__")
+            if bot_mod and hasattr(bot_mod, 'voice_manager') and hasattr(bot_mod, 'VOICE_SYSTEM_LOADED'):
+                voice_manager = bot_mod.voice_manager
+                VOICE_SYSTEM_LOADED = bot_mod.VOICE_SYSTEM_LOADED
+
+                if VOICE_SYSTEM_LOADED and voice_manager:
+                    # Check for natural language voice join commands
+                    if any(phrase in content.lower() for phrase in ['switch to voice', 'go to voice', 'join voice', 'voice mode']):
+                        if message.author.voice:
+                            user_voice_channel = message.author.voice.channel
+                            await message.channel.send(f"Ã°Å¸Å½Â¤ Joining voice channel: **{user_voice_channel.name}**...")
+                            success = await voice_manager.join_voice(user_voice_channel, message.channel)
+                            if success:
+                                await voice_manager.speak("Voice mode enabled, boss! I can hear you now!")
+                                await message.channel.send("Ã¢Å"â€¦ Connected to voice! I'll respond in voice and text!")
+                            else:
+                                await message.channel.send("Ã¢ÂÅ' Failed to join voice channel.")
+                        else:
+                            await message.channel.send("Ã¢ÂÅ' You need to be in a voice channel first, mate!")
+                        return
+
+                    # Check for natural language voice leave commands
+                    if any(phrase in content.lower() for phrase in ['back to chat', 'back to text', 'leave voice', 'exit voice', 'text mode']) and voice_manager.is_in_voice_channel():
+                        await voice_manager.speak("Voice mode disabled. Back to text chat!")
+                        await message.channel.send("Ã°Å¸â€™â€¹ Leaving voice channel...")
+                        success = await voice_manager.leave_voice()
+                        if success:
+                            await message.channel.send("Ã¢Å"â€¦ Left voice channel. Back to text only!")
+                        else:
+                            await message.channel.send("Ã¢ÂÅ' Error leaving voice channel.")
+                        return
+
+        except Exception as e:
+            print(f"[VOICE] Error handling voice commands: {e}")
+
+        try:
+            # --- Toggle back to chat mode (legacy memory retrieval) ---
+            if content.lower() == "back to the chat" and not (bot_mod and hasattr(bot_mod, 'voice_manager') and bot_mod.voice_manager and bot_mod.voice_manager.is_in_voice_channel()):
                 state["interactive_mode"] = False
                 if state["memory_retrieval_buffer"]:
                     # CRITICAL: Store memory for next API call as RAG context
@@ -633,6 +673,23 @@ def register_handlers(bot, call_aid_api_override=None):
                 except Exception as send_e:
                     print(f"[ERROR] Failed to send message chunk to Discord: {send_e}")
                     traceback.print_exc()
+
+            # ===================================================
+            # VOICE OUTPUT (Dual output: text + voice)
+            # ===================================================
+            try:
+                import sys
+                bot_mod = sys.modules.get("__main__")
+                if bot_mod and hasattr(bot_mod, 'voice_manager') and hasattr(bot_mod, 'VOICE_SYSTEM_LOADED'):
+                    voice_manager = bot_mod.voice_manager
+                    VOICE_SYSTEM_LOADED = bot_mod.VOICE_SYSTEM_LOADED
+
+                    if VOICE_SYSTEM_LOADED and voice_manager and voice_manager.is_in_voice_channel():
+                        print("[VOICE] Sending response to voice channel...")
+                        # Send the full reply to voice (it will be queued and played with text mirrored to chat)
+                        await voice_manager.speak(reply_text, send_to_voice=True)
+            except Exception as voice_e:
+                print(f"[VOICE] Error sending voice response: {voice_e}")
 
             print(f"[AUTO_RESPONSE] Completed message handler successfully")
         except Exception as e:
