@@ -133,8 +133,30 @@ def test_voice_cloning():
         # Initialize the basic voice handler first
         voice_handler.init_voice()
 
+        # Workaround for PyTorch 2.6+ if safe_globals didn't work
+        # Temporarily patch torch.load to use weights_only=False for TTS model loading
+        original_torch_load = None
+        if pytorch_major_minor >= (2, 6):
+            import functools
+            original_torch_load = torch.load
+
+            @functools.wraps(original_torch_load)
+            def patched_load(*args, **kwargs):
+                # Force weights_only=False for TTS model loading
+                # This is safe because we trust Coqui TTS official models
+                kwargs['weights_only'] = False
+                return original_torch_load(*args, **kwargs)
+
+            torch.load = patched_load
+            print("   ⚠️  Applied torch.load patch for TTS compatibility")
+
         # Now try to initialize Coqui TTS for voice cloning
         tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2")
+
+        # Restore original torch.load if we patched it
+        if original_torch_load is not None:
+            torch.load = original_torch_load
+            print("   ✓ Restored original torch.load")
 
         if device == "cuda":
             tts = tts.to("cuda")
