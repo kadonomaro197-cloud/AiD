@@ -894,9 +894,20 @@ Previous response was TOO LONG. Keep under 300 words this time.
         print(f"[WARN] Failed to start post-processing thread: {e}")
 
     end_time = time.time()
+    print(f"[DEBUG_TRACE] End time captured: {end_time}")
 
     # === DEBUG LOGGING ===
+    print(f"[DEBUG_TRACE] About to create debug_entry dictionary")
     try:
+        print(f"[DEBUG_TRACE] Creating debug_entry - getting relationship stage")
+        rel_stage = relationship.get_current_stage() if PERSONA_SYSTEMS_LOADED else "unknown"
+        print(f"[DEBUG_TRACE] Got relationship stage: {rel_stage}")
+
+        print(f"[DEBUG_TRACE] Creating debug_entry - getting intimacy score")
+        intimacy_val = round(relationship.get_intimacy_score(), 1) if PERSONA_SYSTEMS_LOADED else 0
+        print(f"[DEBUG_TRACE] Got intimacy score: {intimacy_val}")
+
+        print(f"[DEBUG_TRACE] Assembling debug_entry dictionary")
         debug_entry = {
             "timestamp": datetime.now().isoformat(timespec="seconds"),
             "message_number": message_counter,
@@ -905,8 +916,8 @@ Previous response was TOO LONG. Keep under 300 words this time.
             "orchestrator_memories": len(orchestrator_memories),
             "mode_reset_detected": bool(mode_reset),
             "verbose_mode": conversation_state.get("verbose_mode", False),
-            "relationship_stage": relationship.get_current_stage() if PERSONA_SYSTEMS_LOADED else "unknown",
-            "intimacy_score": round(relationship.get_intimacy_score(), 1) if PERSONA_SYSTEMS_LOADED else 0,
+            "relationship_stage": rel_stage,
+            "intimacy_score": intimacy_val,
             "emotional_state": emotional_context.get('current_emotion', {}).get('primary', {}).get('emotion', 'unknown'),
             "response_mode": emotional_context.get('response_mode', 'default'),
             "conversation_depth": conversation_strategy.get('depth_preference', 'moderate'),
@@ -914,8 +925,10 @@ Previous response was TOO LONG. Keep under 300 words this time.
             "response_time_seconds": round(end_time - start_time, 2),
             "response_preview": reply[:300]
         }
+        print(f"[DEBUG_TRACE] debug_entry dictionary created successfully")
 
         if ADVANCED_INTELLIGENCE_LOADED:
+            print(f"[DEBUG_TRACE] Adding advanced_systems to debug_entry")
             debug_entry["advanced_systems"] = {
                 "vulnerability_level": vulnerability_context.get('level', 'none'),
                 "strategic_silence": silence_context.get('should_be_brief', False),
@@ -923,36 +936,67 @@ Previous response was TOO LONG. Keep under 300 words this time.
                 "socratic_mode": socratic_active
             }
 
+        print(f"[DEBUG_TRACE] Loading existing debug logs from {DEBUG_LOG_FILE}")
         if os.path.exists(DEBUG_LOG_FILE):
             with open(DEBUG_LOG_FILE, "r", encoding="utf-8") as f:
                 logs = json.load(f)
+            print(f"[DEBUG_TRACE] Loaded {len(logs)} existing log entries")
         else:
             logs = []
+            print(f"[DEBUG_TRACE] No existing log file, starting fresh")
+
         logs.append(debug_entry)
+        print(f"[DEBUG_TRACE] Appended new entry, total entries: {len(logs)}")
+
         if len(logs) > 200:
             logs = logs[-200:]
+            print(f"[DEBUG_TRACE] Trimmed logs to 200 entries")
+
+        print(f"[DEBUG_TRACE] Saving debug logs to {DEBUG_LOG_FILE}")
         with open(DEBUG_LOG_FILE, "w", encoding="utf-8") as f:
             json.dump(logs, f, ensure_ascii=False, indent=2)
+        print(f"[DEBUG_TRACE] Debug logs saved successfully")
+
     except Exception as e:
         print(f"[WARN] Failed to save debug log: {e}")
         traceback.print_exc()
 
+    print(f"[DEBUG_TRACE] Exited debug logging block")
+
     # Console output
     print(f"[INFO] Response in {end_time - start_time:.2f}s | Mode: {mode.upper()}")
+    print(f"[DEBUG_TRACE] Step 1: About to print orchestrator memories")
     print(f"       [ORCHESTRATOR] Memories used: {len(orchestrator_memories)}")
+    print(f"[DEBUG_TRACE] Step 2: Orchestrator line printed successfully")
 
     # Defensive logging - catch errors to prevent blocking response
+    print(f"[DEBUG_TRACE] Step 3: About to get memory stats")
     try:
-        print(f"       [MEMORY] Runtime: {memory.get_runtime_size()} | STM: {len(mem_stm.get_all())}")
+        runtime_size = memory.get_runtime_size()
+        print(f"[DEBUG_TRACE] Step 3a: Got runtime_size = {runtime_size}")
+        stm_all = mem_stm.get_all()
+        print(f"[DEBUG_TRACE] Step 3b: Got stm_all, length = {len(stm_all)}")
+        print(f"       [MEMORY] Runtime: {runtime_size} | STM: {len(stm_all)}")
+        print(f"[DEBUG_TRACE] Step 3c: Memory stats printed successfully")
     except Exception as e:
-        print(f"       [MEMORY] Error getting stats: {e}")
+        print(f"[MEMORY] Error getting stats: {e}")
+        traceback.print_exc()
 
+    print(f"[DEBUG_TRACE] Step 4: About to get relationship stats")
     try:
-        print(f"       [RELATIONSHIP] Stage: {relationship.get_current_stage()} | Intimacy: {relationship.get_intimacy_score():.0f}/100")
+        current_stage = relationship.get_current_stage()
+        print(f"[DEBUG_TRACE] Step 4a: Got current_stage = {current_stage}")
+        intimacy = relationship.get_intimacy_score()
+        print(f"[DEBUG_TRACE] Step 4b: Got intimacy = {intimacy}")
+        print(f"       [RELATIONSHIP] Stage: {current_stage} | Intimacy: {intimacy:.0f}/100")
+        print(f"[DEBUG_TRACE] Step 4c: Relationship stats printed successfully")
     except Exception as e:
-        print(f"       [RELATIONSHIP] Error getting stats: {e}")
+        print(f"[RELATIONSHIP] Error getting stats: {e}")
+        traceback.print_exc()
 
+    print(f"[DEBUG_TRACE] Step 5: About to print return statement")
     print(f"[DEBUG] About to return reply: {len(reply)} chars")
+    print(f"[DEBUG_TRACE] Step 6: Executing return statement NOW")
     return reply
 
 # =======================
