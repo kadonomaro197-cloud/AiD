@@ -217,7 +217,7 @@ def register_handlers(bot, call_aid_api_override=None):
         try:
             from memory_management import persistent as mem_persist
         except Exception:
-            mem_persist = Non
+            mem_persist = None
 
         try:
             # allow commands to be processed as before

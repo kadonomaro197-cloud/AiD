@@ -11,6 +11,8 @@ import os
 from datetime import datetime
 from sentence_transformers import SentenceTransformer
 from pathlib import Path
+import threading
+from typing import List, Optional
 
 class MemoryVectorStore:
     """
@@ -37,7 +39,41 @@ class MemoryVectorStore:
         self.load_or_create_index()
         
         print(f"[MEMORY STORE] Initialized with {len(self.memories)} memories")
-    
+
+    def _encode_with_timeout(self, texts: List[str], timeout: float = 5.0) -> Optional[np.ndarray]:
+        """
+        Encode text with timeout protection to prevent hanging.
+
+        Args:
+            texts: List of text strings to encode
+            timeout: Maximum seconds to wait (default: 5.0)
+
+        Returns:
+            Embedding array or None if timeout
+        """
+        result = [None]
+        exception = [None]
+
+        def encode_task():
+            try:
+                result[0] = self.embedding_model.encode(texts)
+            except Exception as e:
+                exception[0] = e
+
+        thread = threading.Thread(target=encode_task, daemon=True)
+        thread.start()
+        thread.join(timeout=timeout)
+
+        if thread.is_alive():
+            print(f"[MEMORY STORE] WARNING: Embedding timeout after {timeout}s")
+            return None
+
+        if exception[0]:
+            print(f"[MEMORY STORE] ERROR: Embedding failed: {exception[0]}")
+            return None
+
+        return result[0]
+
     def add_memory(self, content, timestamp=None, importance=1.0, entities=None):
         """
         Add a new memory to the vector store.
@@ -56,10 +92,15 @@ class MemoryVectorStore:
         
         if entities is None:
             entities = []
-        
-        # Create embedding
-        embedding = self.embedding_model.encode([content])[0]
-        
+
+        # Create embedding with timeout protection
+        embeddings = self._encode_with_timeout([content], timeout=5.0)
+        if embeddings is None:
+            print(f"[MEMORY STORE] ERROR: Failed to create embedding for memory, skipping")
+            return None
+
+        embedding = embeddings[0]
+
         # Create memory object
         memory = {
             "id": len(self.memories),
@@ -96,9 +137,14 @@ class MemoryVectorStore:
         """
         if len(self.memories) == 0:
             return []
-        
-        # Embed query
-        query_vector = self.embedding_model.encode([query])[0]
+
+        # Embed query with timeout protection
+        query_embeddings = self._encode_with_timeout([query], timeout=5.0)
+        if query_embeddings is None:
+            print(f"[MEMORY STORE] ERROR: Failed to encode search query, returning empty results")
+            return []
+
+        query_vector = query_embeddings[0]
         query_np = np.array([query_vector], dtype='float32')
         
         # Search FAISS (returns distances, need to convert to similarities)

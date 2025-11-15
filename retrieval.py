@@ -19,22 +19,22 @@ class MemoryRetrieval:
         self.memory_store = get_memory_store()
         print("[MEMORY RETRIEVAL] Initialized")
     
-    def retrieve(self, query: str, top_k: int = 15, min_score: float = 0.05) -> List[Dict]:
+    def retrieve(self, query: str, top_k: int = 15, min_score: float = 0.35) -> List[Dict]:
         """
         Retrieve relevant memories for a query.
-        
+
         Pipeline:
         1. FAISS semantic search (top 50 candidates)
         2. Score each candidate (semantic × temporal × access × entity × importance)
         3. Sort by final score
         4. Deduplicate very similar memories
         5. Return top_k memories
-        
+
         Args:
             query: User's message/query
             top_k: Number of memories to return (15-20 recommended)
-            min_score: Minimum score threshold (filter out irrelevant)
-        
+            min_score: Minimum score threshold (0.35 = 35% relevance minimum)
+
         Returns:
             List of memory dicts with scores and metadata
         """
@@ -124,26 +124,37 @@ class MemoryRetrieval:
         
         lines = ["[RELEVANT MEMORIES]"]
         lines.append("You have access to these memories from past conversations:")
-        
+        lines.append("")
+
         for memory in memories:
             # Format memory with metadata
             score = memory.get("retrieval_score", 0.0)
-            
+
             # Calculate age
             try:
                 timestamp = datetime.fromisoformat(memory["timestamp"])
                 age = self._format_age(datetime.now() - timestamp)
             except:
                 age = "unknown"
-            
+
             access_count = memory.get("access_count", 1)
-            
-            # Format line
-            line = f"• [Score: {score:.2f}, Age: {age}, Used: {access_count}×] {memory['content']}"
+
+            # Determine confidence level based on score
+            if score >= 0.7:
+                confidence = "HIGH"
+            elif score >= 0.5:
+                confidence = "MEDIUM"
+            else:
+                confidence = "LOW"
+
+            # Format line with confidence indicator
+            line = f"• [{confidence}] [Score: {score:.2f}, Age: {age}, Used: {access_count}×] {memory['content']}"
             lines.append(line)
-        
+
         lines.append("")
-        lines.append("Use relevant memories naturally. Don't announce \"I remember\" - just incorporate information.")
+        lines.append("IMPORTANT: Only use HIGH and MEDIUM confidence memories as factual information.")
+        lines.append("LOW confidence memories should be treated with skepticism - ask for clarification if needed.")
+        lines.append("When using memories, incorporate them naturally without announcing \"I remember\".")
         lines.append("")
         
         return "\n".join(lines)

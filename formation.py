@@ -59,9 +59,10 @@ class MemoryFormation:
         for candidate in candidates:
             # Check for immediate permanence signals
             importance = self._detect_importance(user_message, candidate)
-            
-            if importance >= 2.0:
+
+            if importance >= 1.8:
                 # High importance - create memory immediately
+                # (Includes: explicit markers, emotional content, identity statements)
                 memory_id = self._create_memory(candidate, importance)
                 created_memory_ids.append(memory_id)
                 print(f"[MEMORY FORMATION] Immediate memory (importance={importance:.1f}): {candidate[:50]}...")
@@ -77,7 +78,12 @@ class MemoryFormation:
         # Save reinforcement buffer
         if candidates:
             self.save_reinforcement_buffer()
-        
+
+        # Save memory store to disk if new memories were created
+        if created_memory_ids:
+            self.memory_store.save_index()
+            print(f"[MEMORY FORMATION] Saved {len(created_memory_ids)} new memories to disk")
+
         return created_memory_ids
     
     def _extract_memory_candidates(self, text: str) -> List[str]:
@@ -108,28 +114,54 @@ class MemoryFormation:
     def _detect_importance(self, full_message: str, candidate: str) -> float:
         """
         Detect importance signals in the message.
-        
+
         Returns importance multiplier:
         - 1.0: Normal statement
         - 1.5: Emphasized (!!!, capitals, repeated)
+        - 1.8: Emotional content or identity
         - 2.0+: Explicit memory marker ("don't forget", "remember")
         """
         importance = 1.0
-        
+
         # Make lowercase for matching
         msg_lower = full_message.lower()
         cand_lower = candidate.lower()
-        
+
         # Explicit memory markers (immediate permanence)
         memory_markers = [
             "don't forget", "dont forget", "remember that", "remember this",
             "important:", "note:", "keep in mind", "make sure you remember",
             "this is important", "pay attention"
         ]
-        
+
         for marker in memory_markers:
             if marker in msg_lower:
                 importance = max(importance, 2.0)
+
+        # Emotional content (create immediately)
+        emotional_keywords = [
+            "happy", "sad", "excited", "worried", "anxious", "proud", "grateful",
+            "love", "hate", "miss", "appreciate", "disappointed", "frustrated",
+            "scared", "nervous", "relieved", "thrilled", "overwhelmed"
+        ]
+
+        for emotion in emotional_keywords:
+            if emotion in msg_lower or emotion in cand_lower:
+                importance = max(importance, 1.8)
+
+        # Identity/relationship statements (create immediately)
+        # Check CANDIDATE only, not full message (to avoid false positives)
+        identity_patterns = [
+            r'\bi\'?m\s+\w+',  # "I'm Dee", "I'm a Navy nuke"
+            r'\bmy name is',
+            r'\bi am\s+\w+',
+            r'\byou know i\'?m',
+            r'\bwe\'?re\s+\w+',  # "we're friends"
+        ]
+
+        for pattern in identity_patterns:
+            if re.search(pattern, cand_lower):
+                importance = max(importance, 1.8)
         
         # Emphasis signals
         if "!!!" in full_message or "!!!" in candidate:

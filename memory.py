@@ -558,7 +558,7 @@ def get_sampling_params(mode: str, total_tokens: int) -> dict:
     
     if mode == AIDMode.CHAT:
         return {
-            "temperature": 0.85,
+            "temperature": 0.65,     # Reduced from 0.85 to prevent hallucinations
             "min_p": 0.08,           # Cydonia prefers min_p over top_p
             "top_k": 50,
             "repetition_penalty": 1.10,
@@ -567,7 +567,7 @@ def get_sampling_params(mode: str, total_tokens: int) -> dict:
         }
     elif mode == AIDMode.MEMORY:
         return {
-            "temperature": 0.75,
+            "temperature": 0.55,     # Reduced from 0.75 to prevent hallucinations in memory mode
             "min_p": 0.05,
             "top_k": 40,
             "repetition_penalty": 1.08,

@@ -48,8 +48,8 @@ except ImportError:
 # =======================
 # CONFIGURATION
 # =======================
-TOKEN = "MTQxNzI1MTM5NjEyOTkxNDk1MQ.GFGPTD.N5nFzyvDBgyX7sV8PWeUbIg4npSfEWI4HJooUc"
-API_URL = "http://127.0.0.1:50142/completions"
+TOKEN = "MTQxh1emI0"
+API_URL = "http://127.0.0.1:60331/completions"
 MODEL_NAME = "AID"
 
 # =======================
@@ -454,18 +454,31 @@ def call_aid_api(user_message, rag_context_text="", memory_context_text=""):
         # Retrieve relevant memories automatically
         print(f"[MEMORY RETRIEVAL] Retrieving relevant memories...")
         retrieved_memories = retrieve_memories(user_message, top_k=15)
-        
+
         if retrieved_memories:
-            print(f"[MEMORY RETRIEVAL] Found {len(retrieved_memories)} relevant memories")
-            
-            # Format memories for context injection
-            memory_context_text = format_memories_for_context(retrieved_memories)
-            
-            # Show top 3 for debugging
-            for i, mem in enumerate(retrieved_memories[:3], 1):
-                score = mem.get('final_score', 0)
-                content_preview = mem.get('content', '')[:60]
-                print(f"[MEMORY {i}] Score: {score:.3f} | {content_preview}...")
+            # Additional quality filter: only use high-confidence memories (score >= 0.4)
+            high_quality = [m for m in retrieved_memories if m.get('retrieval_score', 0) >= 0.4]
+
+            # If we have high-quality memories, use only those
+            if high_quality:
+                retrieved_memories = high_quality
+                print(f"[MEMORY RETRIEVAL] Found {len(retrieved_memories)} high-quality memories (score >= 0.4)")
+            else:
+                # If no high-quality memories, only use ones above 0.35
+                retrieved_memories = [m for m in retrieved_memories if m.get('retrieval_score', 0) >= 0.35]
+                print(f"[MEMORY RETRIEVAL] Found {len(retrieved_memories)} relevant memories (score >= 0.35)")
+
+            if retrieved_memories:
+                # Format memories for context injection
+                memory_context_text = format_memories_for_context(retrieved_memories)
+
+                # Show top 3 for debugging
+                for i, mem in enumerate(retrieved_memories[:3], 1):
+                    score = mem.get('retrieval_score', 0)
+                    content_preview = mem.get('content', '')[:60]
+                    print(f"[MEMORY {i}] Score: {score:.2f} | {content_preview}...")
+            else:
+                print(f"[MEMORY RETRIEVAL] No high-quality memories found after filtering")
         else:
             print(f"[MEMORY RETRIEVAL] No relevant memories found")
             
@@ -808,85 +821,74 @@ Previous response was TOO LONG. Keep under 300 words this time.
         reply = f"[ERROR] Error: {e}"
         traceback.print_exc()
 
-    emotion_data = "neutral"  # Default value in case emotion detection fails
-    print("[DEBUG] After response processing, before runtime storage")
-    # Store in runtime
-    try:
-        emotion_data = mem_emotion.assign_emotion(user_message)
-        memory.add_to_runtime("user", user_message, emotion=emotion_data)
-        memory.add_to_runtime("aid", reply, emotion="neutral")
-        print("[DEBUG] Successfully stored in runtime")
-    except Exception as e:
-        print(f"[ERROR] Failed to store in runtime: {e}")
-        traceback.print_exc()
-    
     # ===========================================
-    # NEW: MEMORY FORMATION (REINFORCEMENT-BASED)
+    # POST-PROCESSING IN BACKGROUND THREAD
     # ===========================================
-    try:
-        # Import new memory formation system
-        from memory_management import observe_interaction
-        
-        print(f"[MEMORY FORMATION] Observing interaction...")
-        created_memories = observe_interaction(user_message, reply)
-        
-        if created_memories and len(created_memories) > 0:
-            print(f"[MEMORY FORMATION] Created {len(created_memories)} new memories")
-        else:
-            print(f"[MEMORY FORMATION] No new memories created (reinforcement pending)")
-            
-    except ImportError as e:
-        print(f"[MEMORY FORMATION] New memory system not available: {e}")
-        print(f"[MEMORY FORMATION] Falling back to enhanced_formation...")
-        # Fallback to original system
+    # CRITICAL FIX: Move all post-processing to background thread to prevent blocking
+    # This prevents deadlock with memory operations and allows response to be sent immediately
+
+    def post_process_response():
+        """Run post-processing operations in background thread"""
+        emotion_data = "neutral"
+
+        # Store in runtime
         try:
-#             from memory_management import enhanced_formation
-            
-            analysis = enhanced_formation.analyze_for_memory(user_message, "User")
-            
-            if analysis['should_remember']:
-                memory_id = orchestrator.add_memory(
-                    content=user_message,
-                    category=analysis['categories'][0] if analysis['categories'] else "conversation",
-                    importance=analysis['importance_score'],
-                    metadata={'tags': analysis.get('tags', []), 'auto_formed': True}
-                )
-                if memory_id:
-                    print(f"[ORCHESTRATOR] Created memory (importance: {analysis['importance_score']:.2f})")
-        except Exception as orch_e:
-            print(f"[ORCHESTRATOR] Also failed: {orch_e}")
-            
-    except Exception as e:
-        print(f"[MEMORY FORMATION] Error: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    # ===========================================
-    # POST-RESPONSE LEARNING
-    # ===========================================
-    if PERSONA_SYSTEMS_LOADED:
-        try:
-            preference_learning.learn_from_interaction(user_message, reply)
+            emotion_data = mem_emotion.assign_emotion(user_message)
+            memory.add_to_runtime("user", user_message, emotion=emotion_data)
+            memory.add_to_runtime("aid", reply, emotion="neutral")
+            print("[DEBUG] Successfully stored in runtime")
         except Exception as e:
-            print(f"[PREFERENCES] Learning error: {e}")
-    
-    # ===========================================
-    # UPDATE RELATIONSHIP METRICS
-    # ===========================================
-    try:
-        conversation_duration = time.time() - start_time
-        relationship.update_metrics(
-            user_message=user_message,
-            aid_response=reply,
-            emotion=emotion_data,
-            conversation_duration_seconds=conversation_duration
-        )
-        
-        milestone_messages = relationship.check_milestones()
-        if milestone_messages:
-            context_data["milestones"] = milestone_messages
-    except Exception as e:
-        print(f"[RELATIONSHIP] Warning: {e}")
+            print(f"[ERROR] Failed to store in runtime: {e}")
+            traceback.print_exc()
+
+        # Memory formation
+        try:
+            from memory_management import observe_interaction
+
+            print(f"[MEMORY FORMATION] Observing interaction...")
+            created_memories = observe_interaction(user_message, reply)
+
+            if created_memories and len(created_memories) > 0:
+                print(f"[MEMORY FORMATION] Created {len(created_memories)} new memories")
+            else:
+                print(f"[MEMORY FORMATION] No new memories created (reinforcement pending)")
+
+        except ImportError as e:
+            print(f"[MEMORY FORMATION] New memory system not available: {e}")
+
+        except Exception as e:
+            print(f"[MEMORY FORMATION] Error: {e}")
+            import traceback
+            traceback.print_exc()
+
+        # Preference learning
+        if PERSONA_SYSTEMS_LOADED:
+            try:
+                preference_learning.learn_from_interaction(user_message, reply)
+            except Exception as e:
+                print(f"[PREFERENCES] Learning error: {e}")
+
+        # Relationship metrics
+        try:
+            conversation_duration = time.time() - start_time
+            relationship.update_metrics(
+                user_message=user_message,
+                aid_response=reply,
+                emotion=emotion_data,
+                conversation_duration_seconds=conversation_duration
+            )
+
+            milestone_messages = relationship.check_milestones()
+            if milestone_messages:
+                context_data["milestones"] = milestone_messages
+        except Exception as e:
+            print(f"[RELATIONSHIP] Warning: {e}")
+
+    # Launch post-processing in background thread
+    print("[DEBUG] After response processing, launching background post-processing")
+    import threading
+    post_process_thread = threading.Thread(target=post_process_response, daemon=True)
+    post_process_thread.start()
 
     end_time = time.time()
     
