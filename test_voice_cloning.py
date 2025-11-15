@@ -74,7 +74,7 @@ def test_voice_cloning():
                 from TTS.config import BaseAudioConfig, BaseDatasetConfig
                 from coqpit import Coqpit
 
-                # Import additional config classes that might be needed
+                # Import XTTS model-specific configs
                 safe_globals_list = [
                     XttsConfig,
                     BaseAudioConfig,
@@ -82,10 +82,24 @@ def test_voice_cloning():
                     Coqpit,
                 ]
 
+                # Try to import XTTS-specific audio config (critical for model loading)
+                try:
+                    from TTS.tts.models.xtts import XttsAudioConfig
+                    safe_globals_list.append(XttsAudioConfig)
+                except:
+                    pass
+
                 # Try to import and add other commonly used TTS configs
                 try:
                     from TTS.tts.configs.shared_configs import CharactersConfig
                     safe_globals_list.append(CharactersConfig)
+                except:
+                    pass
+
+                # Add GPT and other XTTS-related configs
+                try:
+                    from TTS.tts.layers.xtts.gpt import GPT
+                    safe_globals_list.append(GPT)
                 except:
                     pass
 
