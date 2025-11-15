@@ -192,10 +192,16 @@ def get_voice() -> VoiceHandler:
         _voice = VoiceHandler()
     return _voice
 
-def init_voice():
-    """Initialize voice handler."""
-    get_voice()
+def init_voice(bot=None):
+    """
+    Initialize voice handler.
+
+    Args:
+        bot: Optional Discord bot instance (for future Discord voice integration)
+    """
+    voice = get_voice()
     print("[VOICE] Voice handler initialized")
+    return voice
 
 def speak(text: str) -> bool:
     """Speak text aloud."""

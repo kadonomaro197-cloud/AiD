@@ -36,6 +36,9 @@ import memory
 # --- PERSONA SYSTEM IMPORTS ---
 from Persona import personality, relationship
 
+# --- VOICE HANDLER IMPORTS ---
+import voice_handler
+
 # --- ORCHESTRATOR (OPTIONAL - for fallback) ---
 try:
     from memory_management import orchestrator
@@ -48,7 +51,7 @@ except ImportError:
 # =======================
 # CONFIGURATION
 # =======================
-TOKEN = "MTQxh1emI0"
+TOKEN = "MTQx0h1emI0"
 API_URL = "http://127.0.0.1:60331/completions"
 MODEL_NAME = "AID"
 
@@ -957,6 +960,14 @@ state["conversation_state"] = conversation_state
 async def on_ready():
     print(f"[DISCORD] [OK] {bot.user} is now connected and ready!")
     print(f"[DISCORD] Connected to {len(bot.guilds)} server(s)")
+
+    # Initialize voice handler
+    try:
+        voice_handler.init_voice(bot)
+        print("[VOICE] Voice handler initialized successfully")
+    except Exception as e:
+        print(f"[VOICE] Failed to initialize voice handler: {e}")
+
     await startup_checks()
 
 @bot.event

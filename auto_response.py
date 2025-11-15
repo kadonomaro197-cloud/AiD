@@ -235,21 +235,68 @@ def register_handlers(bot, call_aid_api_override=None):
         reply = None  # Ensure defined
 
         try:
+            # --- VOICE COMMANDS ---
+            # Switch to voice mode
+            if content.lower() == "switch to voice":
+                try:
+                    import voice_handler
+                    voice_mgr = voice_handler.get_voice()
+
+                    if voice_mgr:
+                        success = await voice_mgr.join_voice_channel(message)
+                        if success:
+                            # Confirm in both voice and text
+                            response = "Alright boss, I'm in the voice channel now! You can talk to me or text me, innit?"
+                            await voice_mgr.speak_in_voice(response)
+                            await message.channel.send(response)
+                        # Error messages already sent by join_voice_channel
+                    else:
+                        await message.channel.send("Voice handler ain't ready yet, mate. Check the logs.")
+                except Exception as e:
+                    print(f"[VOICE] Error switching to voice: {e}")
+                    await message.channel.send(f"Blimey, something went wrong: {e}")
+                return
+
             # --- Toggle back to chat mode ---
             if content.lower() == "back to the chat":
+                # Leave voice channel if in voice mode
+                try:
+                    import voice_handler
+                    voice_mgr = voice_handler.get_voice()
+
+                    if voice_mgr and voice_mgr.is_in_voice:
+                        # Say goodbye in voice before leaving
+                        goodbye_msg = "Alright boss, heading back to text chat. Catch ya there!"
+                        await voice_mgr.speak_in_voice(goodbye_msg)
+
+                        # Give time for speech to complete
+                        await asyncio.sleep(2)
+
+                        # Leave voice channel
+                        await voice_mgr.leave_voice_channel()
+
+                        # Confirm in text
+                        await message.channel.send(goodbye_msg)
+                except Exception as e:
+                    print(f"[VOICE] Error leaving voice channel: {e}")
+
+                # Original memory mode exit logic
                 state["interactive_mode"] = False
                 if state["memory_retrieval_buffer"]:
                     # CRITICAL: Store memory for next API call as RAG context
                     # Don't send it to Discord (too long), don't add it to runtime
                     print(f"[INFO] Memory ({len(state['memory_retrieval_buffer'])} chars) will be used as RAG context")
-                    
+
                     # Keep the memory in the buffer for the next message
                     # It will be passed to call_aid_api as rag_context_text
                     # (Don't clear it here, clear it after use)
                     pass  # Memory stays in buffer
 
+                # Send back-to-chat confirmation if not already sent by voice handler
                 try:
-                    await message.channel.send(mem_phrasing.get_random_back_to_chat())
+                    voice_mgr = voice_handler.get_voice()
+                    if not (voice_mgr and voice_mgr.is_in_voice):
+                        await message.channel.send(mem_phrasing.get_random_back_to_chat())
                 except Exception as e:
                     print(f"[WARN] Failed to send back-to-chat confirmation: {e}")
 
@@ -624,12 +671,33 @@ def register_handlers(bot, call_aid_api_override=None):
             print(f"[AUTO_RESPONSE] About to send reply to Discord: {len(reply_text)} chars")
 
             max_len = 2000
+
+            # --- DUAL OUTPUT: Voice + Text ---
+            # Check if voice mode is active
+            try:
+                import voice_handler
+                voice_mgr = voice_handler.get_voice()
+                voice_active = voice_mgr and voice_mgr.is_in_voice
+            except Exception:
+                voice_active = False
+
             for i in range(0, len(reply_text), max_len):
                 chunk = reply_text[i:i + max_len]
                 print(f"[AUTO_RESPONSE] Attempting to send chunk {i//2000 + 1}: {len(chunk)} chars")
+
                 try:
+                    # If in voice mode, speak the chunk
+                    if voice_active:
+                        try:
+                            await voice_mgr.speak_in_voice(chunk)
+                            print(f"[VOICE] Spoke chunk in voice channel")
+                        except Exception as voice_e:
+                            print(f"[VOICE] Error speaking chunk: {voice_e}")
+
+                    # Always send to text chat (for reference)
                     await message.channel.send(chunk)
                     print(f"[AUTO_RESPONSE] Successfully sent chunk to Discord")
+
                 except Exception as send_e:
                     print(f"[ERROR] Failed to send message chunk to Discord: {send_e}")
                     traceback.print_exc()
