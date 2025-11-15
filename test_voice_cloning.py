@@ -74,7 +74,7 @@ def test_voice_cloning():
                 from TTS.config import BaseAudioConfig, BaseDatasetConfig
                 from coqpit import Coqpit
 
-                # Import XTTS model-specific configs
+                # Import ALL XTTS model-specific classes
                 safe_globals_list = [
                     XttsConfig,
                     BaseAudioConfig,
@@ -82,29 +82,39 @@ def test_voice_cloning():
                     Coqpit,
                 ]
 
-                # Try to import XTTS-specific audio config (critical for model loading)
+                # Import all XTTS-related classes comprehensively
                 try:
-                    from TTS.tts.models.xtts import XttsAudioConfig
-                    safe_globals_list.append(XttsAudioConfig)
-                except:
-                    pass
+                    from TTS.tts.models.xtts import (
+                        XttsAudioConfig,
+                        XttsArgs,
+                    )
+                    safe_globals_list.extend([XttsAudioConfig, XttsArgs])
+                except Exception as e:
+                    print(f"   ⚠️  Could not import XTTS classes: {e}")
 
-                # Try to import and add other commonly used TTS configs
+                # Try to import shared configs
                 try:
                     from TTS.tts.configs.shared_configs import CharactersConfig
                     safe_globals_list.append(CharactersConfig)
                 except:
                     pass
 
-                # Add GPT and other XTTS-related configs
+                # Add GPT and XTTS layers
                 try:
                     from TTS.tts.layers.xtts.gpt import GPT
                     safe_globals_list.append(GPT)
                 except:
                     pass
 
+                # Add vocoder configs if needed
+                try:
+                    from TTS.vocoder.configs import HifiganConfig
+                    safe_globals_list.append(HifiganConfig)
+                except:
+                    pass
+
                 torch.serialization.add_safe_globals(safe_globals_list)
-                print("   ✓ PyTorch 2.6 compatibility fix applied")
+                print(f"   ✓ PyTorch 2.6 compatibility fix applied ({len(safe_globals_list)} classes registered)")
             except Exception as e:
                 print(f"   ⚠️  Could not apply compatibility fix: {e}")
                 print("   Continuing anyway...")
