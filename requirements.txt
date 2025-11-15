@@ -1,0 +1,18 @@
+# AiD - AI Desktop Assistant
+# Core dependencies
+
+# Voice Cloning (Hybrid Approach)
+TTS>=0.22.0                    # Coqui TTS for voice cloning (~100MB)
+sounddevice>=0.4.6             # Audio playback
+soundfile>=0.12.1              # Audio file handling
+pyttsx3>=2.90                  # Fallback TTS engine
+
+# Speech Recognition
+SpeechRecognition>=3.10.0      # Speech-to-text
+pyaudio>=0.2.13                # Microphone input
+
+# Optional: Faster speech recognition
+# faster-whisper>=0.10.0       # GPU-accelerated STT (uncomment if needed)
+
+# Note: First run will download Coqui TTS models (~100MB)
+# GPU acceleration (optional): Install PyTorch with CUDA support

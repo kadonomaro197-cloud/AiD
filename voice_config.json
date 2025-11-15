@@ -1,0 +1,31 @@
+{
+  "voice_cloning": {
+    "enabled": true,
+    "engine": "auto",
+    "fallback_to_pyttsx3": true
+  },
+  "coqui_tts": {
+    "model": "tts_models/multilingual/multi-dataset/xtts_v2",
+    "language": "en",
+    "reference_audio_dir": "voice_samples/reference",
+    "speed": 1.0,
+    "use_cuda": false
+  },
+  "pyttsx3": {
+    "rate": 175,
+    "volume": 0.9,
+    "voice_preference": ["female", "zira", "british"]
+  },
+  "audio_output": {
+    "format": "wav",
+    "sample_rate": 22050,
+    "save_generated": false,
+    "output_dir": "voice_samples/generated"
+  },
+  "comments": {
+    "engine": "Options: 'auto' (Coqui preferred), 'coqui', 'pyttsx3'",
+    "model": "See Coqui TTS models: https://github.com/coqui-ai/TTS",
+    "use_cuda": "Set to true if you have NVIDIA GPU for faster generation",
+    "save_generated": "Set to true to save all generated audio files"
+  }
+}
