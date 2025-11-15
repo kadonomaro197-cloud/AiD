@@ -123,6 +123,36 @@ pip install TTS
 2. Add WAV files of the voice you want to clone
 3. Ensure files have `.wav` extension
 
+### Error: PyTorch 2.6 "Weights only load failed" or "Unsupported global: XttsConfig"
+
+This is a known compatibility issue between PyTorch 2.6+ and Coqui TTS.
+
+**Root cause**: PyTorch 2.6 changed the default behavior of `torch.load` to use `weights_only=True` for security, which breaks loading older TTS models.
+
+**Solution 1 (Recommended)**: The test script automatically applies a fix. Make sure you're using the latest `test_voice_cloning.py`.
+
+**Solution 2**: Downgrade PyTorch to version 2.5.x:
+```bash
+pip install torch==2.5.1
+```
+
+**Solution 3**: Set environment variable before running:
+```bash
+# Windows (PowerShell)
+$env:TORCH_LOAD_WEIGHTS_ONLY="0"
+python test_voice_cloning.py
+
+# Windows (CMD)
+set TORCH_LOAD_WEIGHTS_ONLY=0
+python test_voice_cloning.py
+
+# Linux/Mac
+export TORCH_LOAD_WEIGHTS_ONLY=0
+python test_voice_cloning.py
+```
+
+**What the auto-fix does**: The test script detects PyTorch 2.6+ and automatically adds TTS config classes to PyTorch's safe globals list, allowing the model to load securely.
+
 ### CUDA/GPU Issues
 
 If you have an NVIDIA GPU but it's not being detected:

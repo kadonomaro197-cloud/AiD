@@ -59,7 +59,42 @@ def test_voice_cloning():
     try:
         import torch
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"✓ PyTorch available (Device: {device.upper()})")
+        torch_version = torch.__version__
+        print(f"✓ PyTorch available (Version: {torch_version}, Device: {device.upper()})")
+
+        # Fix for PyTorch 2.6+ compatibility with Coqui TTS
+        # PyTorch 2.6 changed torch.load to use weights_only=True by default
+        # This breaks loading older TTS models, so we need to add safe globals
+        pytorch_major_minor = tuple(map(int, torch_version.split('.')[:2]))
+        if pytorch_major_minor >= (2, 6):
+            print("   ⚠️  PyTorch 2.6+ detected - applying compatibility fix...")
+            try:
+                # Add TTS-related classes to safe globals for secure loading
+                from TTS.tts.configs.xtts_config import XttsConfig
+                from TTS.config import BaseAudioConfig, BaseDatasetConfig
+                from coqpit import Coqpit
+
+                # Import additional config classes that might be needed
+                safe_globals_list = [
+                    XttsConfig,
+                    BaseAudioConfig,
+                    BaseDatasetConfig,
+                    Coqpit,
+                ]
+
+                # Try to import and add other commonly used TTS configs
+                try:
+                    from TTS.tts.configs.shared_configs import CharactersConfig
+                    safe_globals_list.append(CharactersConfig)
+                except:
+                    pass
+
+                torch.serialization.add_safe_globals(safe_globals_list)
+                print("   ✓ PyTorch 2.6 compatibility fix applied")
+            except Exception as e:
+                print(f"   ⚠️  Could not apply compatibility fix: {e}")
+                print("   Continuing anyway...")
+
     except ImportError:
         print("❌ PyTorch not installed")
         print("   Install with: pip install torch")
