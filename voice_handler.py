@@ -13,6 +13,7 @@ pip install TTS pyttsx3 SpeechRecognition pyaudio
 from typing import Optional
 import os
 from pathlib import Path
+from voice_config import VoiceConfig
 
 
 class VoiceHandler:
@@ -159,8 +160,13 @@ class VoiceHandler:
             import soundfile as sf
             import tempfile
 
-            # Use first reference audio for voice cloning
-            speaker_wav = self.reference_audio[0]
+            # Select reference audio based on config
+            ref_index = VoiceConfig.REFERENCE_SAMPLE_INDEX
+            if ref_index == -1:
+                import random
+                speaker_wav = random.choice(self.reference_audio)
+            else:
+                speaker_wav = self.reference_audio[ref_index % len(self.reference_audio)]
 
             # Generate output path
             if output_file is None:
@@ -168,13 +174,31 @@ class VoiceHandler:
                 output_file = temp_file.name
                 temp_file.close()
 
-            # Generate speech with voice cloning
-            self.tts_engine.tts_to_file(
-                text=text,
-                speaker_wav=speaker_wav,
-                language="en",
-                file_path=output_file
-            )
+            # Generate speech with voice cloning and configured parameters
+            # Build kwargs based on what the model supports
+            tts_kwargs = {
+                "text": text,
+                "speaker_wav": speaker_wav,
+                "language": "en",
+                "file_path": output_file,
+            }
+
+            # Add optional parameters (some XTTS versions may not support all)
+            try:
+                tts_kwargs["temperature"] = VoiceConfig.TEMPERATURE
+                tts_kwargs["repetition_penalty"] = VoiceConfig.REPETITION_PENALTY
+                tts_kwargs["length_penalty"] = VoiceConfig.LENGTH_PENALTY
+                tts_kwargs["top_k"] = VoiceConfig.TOP_K
+                tts_kwargs["top_p"] = VoiceConfig.TOP_P
+                tts_kwargs["enable_text_splitting"] = VoiceConfig.ENABLE_TEXT_SPLITTING
+
+                # Speed is not always supported
+                if hasattr(VoiceConfig, 'SPEED') and VoiceConfig.SPEED != 1.0:
+                    tts_kwargs["speed"] = VoiceConfig.SPEED
+            except:
+                pass  # If parameters not supported, use defaults
+
+            self.tts_engine.tts_to_file(**tts_kwargs)
 
             # Play the audio
             data, samplerate = sf.read(output_file)
