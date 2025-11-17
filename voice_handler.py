@@ -13,6 +13,7 @@ pip install TTS pyttsx3 SpeechRecognition pyaudio
 from typing import Optional
 import os
 from pathlib import Path
+from voice_config import VoiceConfig
 
 
 class VoiceHandler:
@@ -29,6 +30,11 @@ class VoiceHandler:
         self.stt_recognizer = None
         self.voice_samples_dir = Path(__file__).parent / "voice_samples" / "reference"
         self.reference_audio = None
+
+        # Discord voice channel support
+        self.voice_client = None
+        self.is_in_voice = False
+        self.current_voice_channel = None
 
         self._init_tts()
         self._init_stt()
@@ -152,45 +158,71 @@ class VoiceHandler:
             print(f"[VOICE] TTS error: {e}")
             return False
 
-    def _speak_coqui(self, text: str, output_file: Optional[str] = None) -> bool:
+    def _speak_coqui(self, text: str, output_file: Optional[str] = None, play_audio: bool = True) -> bool:
         """Speak using Coqui TTS with voice cloning."""
         try:
-            import sounddevice as sd
-            import soundfile as sf
             import tempfile
 
-            # Use first reference audio for voice cloning
-            speaker_wav = self.reference_audio[0]
+            # Select reference audio based on config
+            ref_index = VoiceConfig.REFERENCE_SAMPLE_INDEX
+            if ref_index == -1:
+                import random
+                speaker_wav = random.choice(self.reference_audio)
+            else:
+                speaker_wav = self.reference_audio[ref_index % len(self.reference_audio)]
 
             # Generate output path
+            temp_created = False
             if output_file is None:
                 temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
                 output_file = temp_file.name
                 temp_file.close()
+                temp_created = True
 
-            # Generate speech with voice cloning
-            self.tts_engine.tts_to_file(
-                text=text,
-                speaker_wav=speaker_wav,
-                language="en",
-                file_path=output_file
-            )
+            # Generate speech with voice cloning and configured parameters
+            # Build kwargs based on what the model supports
+            tts_kwargs = {
+                "text": text,
+                "speaker_wav": speaker_wav,
+                "language": "en",
+                "file_path": output_file,
+            }
 
-            # Play the audio
-            data, samplerate = sf.read(output_file)
-            sd.play(data, samplerate)
-            sd.wait()
+            # Add optional parameters (some XTTS versions may not support all)
+            try:
+                tts_kwargs["temperature"] = VoiceConfig.TEMPERATURE
+                tts_kwargs["repetition_penalty"] = VoiceConfig.REPETITION_PENALTY
+                tts_kwargs["length_penalty"] = VoiceConfig.LENGTH_PENALTY
+                tts_kwargs["top_k"] = VoiceConfig.TOP_K
+                tts_kwargs["top_p"] = VoiceConfig.TOP_P
+                tts_kwargs["enable_text_splitting"] = VoiceConfig.ENABLE_TEXT_SPLITTING
 
-            # Clean up temp file if created
-            if output_file.startswith(tempfile.gettempdir()):
+                # Speed is not always supported
+                if hasattr(VoiceConfig, 'SPEED') and VoiceConfig.SPEED != 1.0:
+                    tts_kwargs["speed"] = VoiceConfig.SPEED
+            except:
+                pass  # If parameters not supported, use defaults
+
+            self.tts_engine.tts_to_file(**tts_kwargs)
+
+            # Play the audio if requested (for local playback, not Discord)
+            if play_audio:
+                try:
+                    import sounddevice as sd
+                    import soundfile as sf
+                    data, samplerate = sf.read(output_file)
+                    sd.play(data, samplerate)
+                    sd.wait()
+                except ImportError:
+                    print("[VOICE] sounddevice/soundfile not installed for audio playback")
+                    print("[VOICE] Install with: pip install sounddevice soundfile")
+
+            # Clean up temp file if created and not needed
+            if temp_created and play_audio:
                 os.remove(output_file)
 
             return True
 
-        except ImportError:
-            print("[VOICE] sounddevice/soundfile not installed for audio playback")
-            print("[VOICE] Install with: pip install sounddevice soundfile")
-            return False
         except Exception as e:
             print(f"[VOICE] Coqui TTS error: {e}")
             return False
@@ -292,6 +324,174 @@ class VoiceHandler:
             'reference_samples': len(self.reference_audio) if self.reference_audio else 0,
             'stt': self.stt_enabled
         }
+
+    # =======================
+    # DISCORD VOICE CHANNEL INTEGRATION
+    # =======================
+
+    async def join_voice_channel(self, message) -> bool:
+        """
+        Join the voice channel that the message author is in.
+
+        Args:
+            message: Discord message object
+
+        Returns:
+            bool: True if successfully joined, False otherwise
+        """
+        try:
+            # Check if user is in a voice channel
+            if not message.author.voice:
+                await message.channel.send("You need to be in a voice channel for me to join, innit?")
+                return False
+
+            # Get the voice channel
+            voice_channel = message.author.voice.channel
+
+            # Join the channel
+            if self.voice_client and self.voice_client.is_connected():
+                # Already in a voice channel, move to new one
+                await self.voice_client.move_to(voice_channel)
+            else:
+                # Join the channel
+                self.voice_client = await voice_channel.connect()
+
+            self.is_in_voice = True
+            self.current_voice_channel = voice_channel
+            print(f"[VOICE] Joined voice channel: {voice_channel.name}")
+            return True
+
+        except Exception as e:
+            print(f"[VOICE] Error joining voice channel: {e}")
+            await message.channel.send(f"Couldn't join the voice channel: {e}")
+            return False
+
+    async def leave_voice_channel(self) -> bool:
+        """
+        Leave the current voice channel.
+
+        Returns:
+            bool: True if successfully left, False otherwise
+        """
+        try:
+            if self.voice_client and self.voice_client.is_connected():
+                await self.voice_client.disconnect()
+                print("[VOICE] Left voice channel")
+
+            self.voice_client = None
+            self.is_in_voice = False
+            self.current_voice_channel = None
+            return True
+
+        except Exception as e:
+            print(f"[VOICE] Error leaving voice channel: {e}")
+            return False
+
+    async def speak_in_voice(self, text: str, emotion: Optional[str] = None,
+                            intensity: float = 0.5) -> bool:
+        """
+        Speak in Discord voice channel with emotion-aware voice parameters.
+
+        Args:
+            text: Text to speak
+            emotion: Optional emotion to apply (e.g., "happy", "sad", "neutral")
+            intensity: Emotion intensity (0.0 to 1.0)
+
+        Returns:
+            bool: True if successfully spoke, False otherwise
+        """
+        try:
+            import discord
+            import asyncio
+            import tempfile
+
+            if not self.voice_client or not self.voice_client.is_connected():
+                print("[VOICE] Not in a voice channel")
+                return False
+
+            if not self.tts_enabled:
+                print("[VOICE] TTS not enabled")
+                return False
+
+            # Clean text for speech
+            clean_text = self._clean_for_speech(text)
+
+            # Apply emotion-based voice parameters if emotion provided
+            if emotion:
+                try:
+                    from emotion_voice_mapper import set_voice_for_emotion
+                    set_voice_for_emotion(emotion, intensity)
+                    print(f"[VOICE] Applied emotion: {emotion} (intensity: {intensity:.2f})")
+                except ImportError:
+                    print("[VOICE] Emotion voice mapper not available, using default parameters")
+
+            # Generate speech to a temporary file
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                temp_path = temp_file.name
+
+            # Generate the audio (don't play it locally, we'll stream to Discord)
+            if self.tts_mode == 'coqui':
+                success = self._speak_coqui(clean_text, output_file=temp_path, play_audio=False)
+            else:
+                # pyttsx3 can't easily save to file, so we'll skip voice for fallback
+                print("[VOICE] pyttsx3 doesn't support Discord voice streaming")
+                return False
+
+            if not success:
+                print("[VOICE] Failed to generate speech")
+                return False
+
+            # Play the audio in Discord voice channel
+            if self.voice_client.is_playing():
+                self.voice_client.stop()
+
+            audio_source = discord.FFmpegPCMAudio(temp_path)
+            self.voice_client.play(audio_source)
+
+            # Wait for playback to finish
+            while self.voice_client.is_playing():
+                await asyncio.sleep(0.1)
+
+            # Clean up temp file
+            try:
+                os.remove(temp_path)
+            except:
+                pass
+
+            print(f"[VOICE] Spoke in voice channel: '{clean_text[:50]}...'")
+            return True
+
+        except ImportError as e:
+            print(f"[VOICE] Missing dependency for Discord voice: {e}")
+            print("[VOICE] Install: pip install discord.py[voice] ffmpeg-python")
+            return False
+        except Exception as e:
+            print(f"[VOICE] Error speaking in voice channel: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    def speak_with_emotion(self, text: str, emotion: str, intensity: float = 0.5,
+                          output_file: Optional[str] = None) -> bool:
+        """
+        Speak with specific emotion (for testing or non-Discord usage).
+
+        Args:
+            text: Text to speak
+            emotion: Emotion to apply
+            intensity: Emotion intensity (0.0 to 1.0)
+            output_file: Optional output file path
+
+        Returns:
+            bool: True if successful
+        """
+        try:
+            from emotion_voice_mapper import set_voice_for_emotion
+            set_voice_for_emotion(emotion, intensity)
+            return self.speak(text, output_file=output_file)
+        except ImportError:
+            print("[VOICE] Emotion voice mapper not available")
+            return self.speak(text, output_file=output_file)
 
 
 # =======================
