@@ -1,6 +1,12 @@
 """
 Voice Configuration for AiD TTS
 Adjust these parameters to fine-tune speech quality, pacing, and naturalness.
+
+CURRENT CONFIGURATION: Accent Emphasis
+- Optimized to bring out strong accent characteristics
+- High expressiveness (TEMP=0.82, TOP_P=0.94)
+- Lower repetition penalty to allow accent patterns
+- Try different REFERENCE_SAMPLE_INDEX (0-16) to find samples with strongest accent
 """
 
 class VoiceConfig:
@@ -21,19 +27,22 @@ class VoiceConfig:
     # - Lower (0.1-0.5): More consistent, less natural, reduces slurring
     # - Medium (0.5-0.7): Balanced (RECOMMENDED)
     # - Higher (0.7-1.0): More expressive but less consistent
-    TEMPERATURE = 0.65
+    # ACCENT EMPHASIS: Set higher for stronger accent (0.82)
+    TEMPERATURE = 0.82
 
     # Repetition Penalty: Reduces repetitive patterns
     # - Lower (1.0-2.0): May repeat sounds/words
     # - Medium (2.0-5.0): Balanced (RECOMMENDED)
     # - Higher (5.0-10.0): Avoids repetition aggressively
-    REPETITION_PENALTY = 2.5
+    # ACCENT EMPHASIS: Set lower to allow accent patterns (1.8)
+    REPETITION_PENALTY = 1.8
 
     # Length Penalty: Affects speech duration and pacing
     # - Lower (0.5-1.0): Faster, shorter pauses
     # - Default (1.0): Natural pacing
     # - Higher (1.0-2.0): Slower, longer pauses
-    LENGTH_PENALTY = 1.0
+    # ACCENT EMPHASIS: Slightly higher for deliberate accent (1.2)
+    LENGTH_PENALTY = 1.2
 
     # ============================================================
     # SAMPLING PARAMETERS
@@ -43,13 +52,15 @@ class VoiceConfig:
     # - Lower (10-30): More predictable, clearer
     # - Medium (50): Balanced (RECOMMENDED)
     # - Higher (100+): More varied but potentially unclear
-    TOP_K = 50
+    # ACCENT EMPHASIS: Higher for accent pronunciation variety (90)
+    TOP_K = 90
 
     # Top-P (Nucleus Sampling): Probability threshold
     # - Lower (0.7-0.85): More focused, clearer
     # - Medium (0.85-0.9): Balanced (RECOMMENDED)
     # - Higher (0.9-1.0): More creative but less stable
-    TOP_P = 0.85
+    # ACCENT EMPHASIS: Higher for diverse accent patterns (0.94)
+    TOP_P = 0.94
 
     # ============================================================
     # TEXT PROCESSING
@@ -65,7 +76,8 @@ class VoiceConfig:
     # - 1.0: Normal speed
     # - 1.1-1.5: Faster, more energetic
     # Note: Not all XTTS versions support this parameter
-    SPEED = 1.0
+    # ACCENT EMPHASIS: Slightly slower for clear accent (0.92)
+    SPEED = 0.92
 
     # ============================================================
     # REFERENCE AUDIO SELECTION
@@ -120,6 +132,17 @@ class VoiceConfig:
         cls.TOP_P = 0.82
         cls.ENABLE_TEXT_SPLITTING = True
         cls.SPEED = 0.90
+
+    @classmethod
+    def preset_accent_emphasis(cls):
+        """Emphasize accent characteristics with high expressiveness."""
+        cls.TEMPERATURE = 0.82
+        cls.REPETITION_PENALTY = 1.8
+        cls.LENGTH_PENALTY = 1.2
+        cls.TOP_K = 90
+        cls.TOP_P = 0.94
+        cls.ENABLE_TEXT_SPLITTING = True
+        cls.SPEED = 0.92
 
     @classmethod
     def reset_to_defaults(cls):
@@ -181,4 +204,13 @@ SOLUTION:
   - Check sample quality with: python check_voice_samples.py
   - Try different REFERENCE_SAMPLE_INDEX (0-16 for your 17 samples)
   - Ensure samples are clean, 10-20 seconds, mono, 22050 Hz
+
+PROBLEM: Accent is too weak or not coming through
+SOLUTION:
+  - Increase TEMPERATURE (try 0.78-0.85) - allows more accent variation
+  - Increase TOP_P (try 0.92-0.95) - enables more diverse speech patterns
+  - Increase TOP_K (try 85-100) - more pronunciation choices
+  - Lower REPETITION_PENALTY (try 1.5-2.0) - allows accent patterns to repeat
+  - CRITICAL: Try different REFERENCE_SAMPLE_INDEX - some samples have stronger accents
+  - Or use: VoiceConfig.preset_accent_emphasis()
 """
