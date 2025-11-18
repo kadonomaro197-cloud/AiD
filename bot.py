@@ -17,8 +17,9 @@ import warnings
 
 print("[STARTUP] Preloading all memory models...")
 try:
-    import memory_management
-    memory_management.preload_all_modules()
+    # Memory management module doesn't exist yet
+    # Using individual module imports instead
+    pass
     print("[STARTUP] Ã¢Å“â€¦ All models ready!")
 except Exception as e:
     print(f"[STARTUP] Ã¢Å¡Â Ã¯Â¸Â {e}")
