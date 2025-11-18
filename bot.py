@@ -936,16 +936,31 @@ Previous response was TOO LONG. Keep under 300 words this time.
     except Exception as e:
         print(f"[WARN] Failed to save debug log: {e}")
 
-    # Console output (wrapped in try-except to prevent blocking return)
+    # Console output - each print wrapped individually for safety
     try:
         print(f"[INFO] Response in {end_time - start_time:.2f}s | Mode: {mode.upper()}")
+    except: pass
+
+    try:
         print(f"       [ORCHESTRATOR] Memories used: {len(orchestrator_memories)}")
-        print(f"       [MEMORY] Runtime: {memory.get_runtime_size()} | STM: {len(mem_stm.get_all())}")
-        print(f"       [RELATIONSHIP] Stage: {relationship.get_current_stage()} | Intimacy: {relationship.get_intimacy_score():.0f}/100")
-    except Exception as debug_e:
-        print(f"[WARN] Debug output failed: {debug_e}")
+    except: pass
+
+    try:
+        runtime_size = memory.get_runtime_size()
+        stm_size = len(mem_stm.get_all())
+        print(f"       [MEMORY] Runtime: {runtime_size} | STM: {stm_size}")
+    except Exception as e:
+        print(f"       [MEMORY] Error getting memory stats: {e}")
+
+    try:
+        stage = relationship.get_current_stage()
+        intimacy = relationship.get_intimacy_score()
+        print(f"       [RELATIONSHIP] Stage: {stage} | Intimacy: {intimacy:.0f}/100")
+    except Exception as e:
+        print(f"       [RELATIONSHIP] Error getting relationship stats: {e}")
 
     print(f"[DEBUG] About to return reply: {len(reply)} chars")
+    print(f"[DEBUG] Reply type: {type(reply)}, content preview: {reply[:100] if reply else 'None'}")
     return reply
 
 # =======================

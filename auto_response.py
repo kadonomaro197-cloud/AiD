@@ -628,17 +628,19 @@ def register_handlers(bot, call_aid_api_override=None):
 
             # --- Normal chat ---
             else:
+                print(f"[AUTO_RESPONSE] Entered normal chat block")
                 if not state["interactive_mode"]:
+                    print(f"[AUTO_RESPONSE] Not in interactive mode, will call API")
                     # Check if we have a retrieved memory to use as MEMORY context
                     memory_context_text = ""
                     rag_context_text = ""
-        
+
                     if state.get("memory_retrieval_buffer"):
                         # Pass memory as MEMORY context (3rd parameter)
                         memory_context_text = state["memory_retrieval_buffer"]
                         print(f"[INFO] Using retrieved memory as memory context ({len(memory_context_text)} chars)")
                         state["memory_retrieval_buffer"] = None  # Clear after use
-        
+
                     content_to_send = content
 
                     # find call_aid_api (again, allow fallback to bot module)
@@ -650,15 +652,19 @@ def register_handlers(bot, call_aid_api_override=None):
 
                     if not call_aid_api_local:
                         # If function missing, inform user
+                        print(f"[AUTO_RESPONSE] call_aid_api not found!")
                         try:
-                            await message.channel.send("Ã¢Å’ AID engine unavailable. contact admin.")
+                            await message.channel.send("Ã¢Å' AID engine unavailable. contact admin.")
                         except Exception:
                             pass
                         return
 
+                    print(f"[AUTO_RESPONSE] About to call call_aid_api with executor")
                     # Pass memory in correct parameter position (3rd)
                     reply = await loop.run_in_executor(executor, call_aid_api_local, content_to_send, rag_context_text, memory_context_text)
                     print(f"[AUTO_RESPONSE] Received reply from call_aid_api: {len(reply) if reply else 0} chars")
+                else:
+                    print(f"[AUTO_RESPONSE] In interactive mode, skipping API call")
             print(f"[AUTO_RESPONSE] REACHED SEND SECTION - reply variable: {type(reply)} {len(str(reply)) if reply else 0} chars")
 
             # --- Send reply strictly in 2000-char chunks ---
