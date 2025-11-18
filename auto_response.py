@@ -692,17 +692,17 @@ def register_handlers(bot, call_aid_api_override=None):
                 print(f"[AUTO_RESPONSE] Attempting to send chunk {i//2000 + 1}: {len(chunk)} chars")
 
                 try:
-                    # If in voice mode, speak the chunk
+                    # Always send to text chat first (ensures response is never blocked)
+                    await message.channel.send(chunk)
+                    print(f"[AUTO_RESPONSE] Successfully sent chunk to Discord")
+
+                    # Then try to speak in voice if active (don't block on this)
                     if voice_active:
                         try:
                             await voice_mgr.speak_in_voice(chunk)
                             print(f"[VOICE] Spoke chunk in voice channel")
                         except Exception as voice_e:
-                            print(f"[VOICE] Error speaking chunk: {voice_e}")
-
-                    # Always send to text chat (for reference)
-                    await message.channel.send(chunk)
-                    print(f"[AUTO_RESPONSE] Successfully sent chunk to Discord")
+                            print(f"[VOICE] Error speaking chunk (non-blocking): {voice_e}")
 
                 except Exception as send_e:
                     print(f"[ERROR] Failed to send message chunk to Discord: {send_e}")
