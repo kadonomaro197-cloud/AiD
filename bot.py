@@ -99,8 +99,8 @@ mem_stm.start_auto_save_loop()
 # === Load STM into runtime buffer ===
 memory.init_runtime_from_stm()
 
-# === START AUTO-SAVE FROM RUNTIME TO STM ===
-memory.start_auto_save_loop()
+# === INITIALIZE MESSAGE-BASED AUTO-SAVE FROM RUNTIME TO STM ===
+memory.init_auto_save()
 
 # === Auto-clean runtime ===
 memory.cleanup_runtime()
@@ -1217,12 +1217,12 @@ def shutdown_handler():
         except Exception as e:
             print(f"[SHUTDOWN] [WARN] Error stopping proactive: {e}")
     
-    # Stop auto-save loop
+    # Perform final auto-save before shutdown
     try:
-        memory.stop_auto_save_loop()
-        print("[SHUTDOWN] [OK] Auto-save loop stopped")
+        memory._trigger_auto_save()
+        print("[SHUTDOWN] [OK] Final auto-save completed")
     except Exception as e:
-        print(f"[SHUTDOWN] [WARN] Error stopping auto-save: {e}")
+        print(f"[SHUTDOWN] [WARN] Error during final auto-save: {e}")
     
     # NEW: Run final orchestrator maintenance (if available)
     if ORCHESTRATOR_AVAILABLE:

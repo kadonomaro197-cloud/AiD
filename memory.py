@@ -35,9 +35,9 @@ class AIDMode:
 # =======================
 # AUTO-SAVE CONFIGURATION
 # =======================
-_auto_save_thread = None
-_auto_save_running = False
-AUTO_SAVE_INTERVAL = 60  # Save runtime to STM every 60 seconds
+_message_counter = 0
+MESSAGE_SAVE_INTERVAL = 10  # Save runtime to STM every 10 messages
+_save_lock = threading.Lock()
 
 # =======================
 # TOKEN BUDGETS PER MODE (RTX 3090 24GB - 32K CONTEXT OPTIMIZED)
@@ -89,15 +89,15 @@ _runtime_lock = threading.Lock()
 
 def add_to_runtime(role: str, content: str, emotion: str = "neutral"):
     """Add message to runtime with safeguards against memory leaks."""
-    global _runtime_conversation
-    
+    global _runtime_conversation, _message_counter
+
     MAX_SINGLE_MESSAGE_TOKENS = 8000  # UPGRADED: 8000 from 1500 for 32k context
     token_estimate = estimate_tokens(content)
-    
+
     if token_estimate > MAX_SINGLE_MESSAGE_TOKENS:
         print(f"[MEMORY] Message too large ({token_estimate} tokens), skipping runtime")
         return
-    
+
     with _runtime_lock:
         entry = {
             "role": role,
@@ -106,7 +106,13 @@ def add_to_runtime(role: str, content: str, emotion: str = "neutral"):
             "emotion": emotion
         }
         _runtime_conversation.append(entry)
-        
+
+        # Increment message counter and trigger save every MESSAGE_SAVE_INTERVAL messages
+        _message_counter += 1
+        if _message_counter >= MESSAGE_SAVE_INTERVAL:
+            _trigger_auto_save()
+            _message_counter = 0
+
         # PERIODIC CLEANUP - Every 100 messages
         if len(_runtime_conversation) % 100 == 0:
             periodic_runtime_cleanup()
@@ -178,54 +184,43 @@ def cleanup_runtime():
         else:
             print(f"[MEMORY] [CLEANUP] Runtime clean - {len(_runtime_conversation)} normal messages")
 
-def _auto_save_loop():
-    """Background thread that periodically saves runtime to STM."""
-    global _auto_save_running, _runtime_conversation, _runtime_lock
-    print("[MEMORY] Auto-save loop thread started")
-    
-    while _auto_save_running:
-        time.sleep(AUTO_SAVE_INTERVAL)
-        if not _auto_save_running:
-            break
-        try:
-            # Copy data while holding lock, then release BEFORE disk I/O
-            with _runtime_lock:
-                # UPGRADED: Save last 200 messages instead of 50
-                messages_to_save = _runtime_conversation[-200:] if len(_runtime_conversation) > 200 else _runtime_conversation
-                # Make a deep copy to avoid holding lock during I/O
-                messages_copy = list(messages_to_save)
-                saved_count = len(messages_copy)
+def _trigger_auto_save():
+    """Trigger an immediate save of runtime to STM (called every MESSAGE_SAVE_INTERVAL messages)."""
+    global _runtime_conversation, _runtime_lock, _save_lock
 
-            # Disk I/O happens OUTSIDE the lock to avoid blocking other operations
-            import memory_management.stm as mem_stm_module
-            mem_stm_module._stm_data = messages_copy
-            mem_stm.save_stm(log=False)
-
-            print(f"[MEMORY] [AUTO-SAVE] Saved {saved_count} messages to STM")
-        except Exception as e:
-            print(f"[MEMORY] [AUTO-SAVE] Failed: {e}")
-            import traceback
-            traceback.print_exc()
-
-def start_auto_save_loop():
-    """Start the auto-save background thread."""
-    global _auto_save_thread, _auto_save_running
-    
-    if _auto_save_thread is not None and _auto_save_thread.is_alive():
-        print("[MEMORY] Auto-save loop already running")
+    # Use a separate save lock to avoid blocking add_to_runtime callers
+    if not _save_lock.acquire(blocking=False):
+        # Another save is already in progress, skip this one
         return
-    
-    _auto_save_running = True
-    _auto_save_thread = threading.Thread(target=_auto_save_loop, daemon=True)
-    _auto_save_thread.start()
-    print(f"[MEMORY] [OK] Auto-save enabled: Runtime -> STM every {AUTO_SAVE_INTERVAL} seconds")
 
-def stop_auto_save_loop():
-    """Stop the auto-save background thread."""
-    global _auto_save_running
-    _auto_save_running = False
-    if _auto_save_thread is not None:
-        print("[MEMORY] Auto-save loop stopped")
+    try:
+        # Copy data while holding runtime lock, then release BEFORE disk I/O
+        with _runtime_lock:
+            # Save last 200 messages instead of all
+            messages_to_save = _runtime_conversation[-200:] if len(_runtime_conversation) > 200 else _runtime_conversation
+            # Make a deep copy to avoid holding lock during I/O
+            messages_copy = list(messages_to_save)
+
+        # Disk I/O happens OUTSIDE the lock to avoid blocking other operations
+        import memory_management.stm as mem_stm_module
+        mem_stm_module._stm_data = messages_copy
+        mem_stm.save_stm(log=False)
+
+        # Reduced logging verbosity - only log occasionally
+        if len(messages_copy) % 50 == 0:
+            print(f"[MEMORY] Auto-saved {len(messages_copy)} messages to STM")
+    except Exception as e:
+        print(f"[MEMORY] [AUTO-SAVE] Failed: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        _save_lock.release()
+
+def init_auto_save():
+    """Initialize message-based auto-save system."""
+    global _message_counter
+    _message_counter = 0
+    print(f"[MEMORY] [OK] Auto-save enabled: Runtime -> STM every {MESSAGE_SAVE_INTERVAL} messages")
 
 # =======================
 # TOKEN ESTIMATION
