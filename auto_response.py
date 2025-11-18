@@ -657,9 +657,17 @@ def register_handlers(bot, call_aid_api_override=None):
                         return
 
                     # Pass memory in correct parameter position (3rd)
+                    print(f"[AUTO_RESPONSE] About to call call_aid_api...")
                     reply = await loop.run_in_executor(executor, call_aid_api_local, content_to_send, rag_context_text, memory_context_text)
                     print(f"[AUTO_RESPONSE] Received reply from call_aid_api: {len(reply) if reply else 0} chars")
-            print(f"[AUTO_RESPONSE] REACHED SEND SECTION - reply variable: {type(reply)} {len(str(reply)) if reply else 0} chars")
+                    print(f"[AUTO_RESPONSE] Reply type: {type(reply)}, content preview: {str(reply)[:100]}")
+
+            # Send section - only run if reply was set
+            if reply is None:
+                print(f"[AUTO_RESPONSE] No reply generated - skipping send")
+                return
+
+            print(f"[AUTO_RESPONSE] REACHED SEND SECTION - reply length: {len(str(reply))} chars")
 
             # --- Send reply strictly in 2000-char chunks ---
             reply_text = reply if isinstance(reply, str) else str(reply)
