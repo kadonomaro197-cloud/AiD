@@ -72,6 +72,8 @@ class AccentTuner:
                 "TOP_K": 50,
                 "TOP_P": 0.85,
                 "SPEED": 1.0,
+                "ENABLE_TEXT_SPLITTING": True,
+                "REFERENCE_SAMPLE_INDEX": 0,
             },
             {
                 "name": "Moderate Accent",
@@ -82,6 +84,8 @@ class AccentTuner:
                 "TOP_K": 70,
                 "TOP_P": 0.90,
                 "SPEED": 0.95,
+                "ENABLE_TEXT_SPLITTING": True,
+                "REFERENCE_SAMPLE_INDEX": 0,
             },
             {
                 "name": "Strong Accent",
@@ -92,6 +96,8 @@ class AccentTuner:
                 "TOP_K": 90,
                 "TOP_P": 0.94,
                 "SPEED": 0.92,
+                "ENABLE_TEXT_SPLITTING": True,
+                "REFERENCE_SAMPLE_INDEX": 0,
             },
             {
                 "name": "Very Strong Accent",
@@ -102,6 +108,8 @@ class AccentTuner:
                 "TOP_K": 100,
                 "TOP_P": 0.96,
                 "SPEED": 0.90,
+                "ENABLE_TEXT_SPLITTING": True,
+                "REFERENCE_SAMPLE_INDEX": 0,
             },
             {
                 "name": "Ultra Expressive",
@@ -112,6 +120,8 @@ class AccentTuner:
                 "TOP_K": 110,
                 "TOP_P": 0.97,
                 "SPEED": 0.88,
+                "ENABLE_TEXT_SPLITTING": True,
+                "REFERENCE_SAMPLE_INDEX": 0,
             },
         ]
 
@@ -126,6 +136,8 @@ class AccentTuner:
         base_top_k = base_config["TOP_K"]
         base_top_p = base_config["TOP_P"]
         base_speed = base_config["SPEED"]
+        base_text_split = base_config.get("ENABLE_TEXT_SPLITTING", True)
+        base_ref_index = base_config.get("REFERENCE_SAMPLE_INDEX", 0)
 
         # Variation magnitude decreases with each round
         variation = 0.1 if self.round_number == 2 else 0.05
@@ -147,6 +159,8 @@ class AccentTuner:
             "TOP_K": base_top_k,
             "TOP_P": min(0.99, base_top_p + variation * 0.5),
             "SPEED": base_speed,
+            "ENABLE_TEXT_SPLITTING": base_text_split,
+            "REFERENCE_SAMPLE_INDEX": base_ref_index,
         })
 
         # Config 3: Lower repetition penalty (more natural patterns)
@@ -159,6 +173,8 @@ class AccentTuner:
             "TOP_K": base_top_k,
             "TOP_P": base_top_p,
             "SPEED": base_speed,
+            "ENABLE_TEXT_SPLITTING": base_text_split,
+            "REFERENCE_SAMPLE_INDEX": base_ref_index,
         })
 
         # Config 4: Higher TOP_K/TOP_P (more diversity)
@@ -171,6 +187,8 @@ class AccentTuner:
             "TOP_K": min(150, int(base_top_k + 20)),
             "TOP_P": min(0.99, base_top_p + variation * 0.3),
             "SPEED": base_speed,
+            "ENABLE_TEXT_SPLITTING": base_text_split,
+            "REFERENCE_SAMPLE_INDEX": base_ref_index,
         })
 
         # Config 5: Slower/more deliberate
@@ -183,6 +201,8 @@ class AccentTuner:
             "TOP_K": base_top_k,
             "TOP_P": base_top_p,
             "SPEED": max(0.75, base_speed - 0.05),
+            "ENABLE_TEXT_SPLITTING": base_text_split,
+            "REFERENCE_SAMPLE_INDEX": base_ref_index,
         })
 
         return configs
@@ -198,20 +218,23 @@ class AccentTuner:
         VoiceConfig.ENABLE_TEXT_SPLITTING = True
 
     def generate_sample(self, config: Dict, sample_num: int, text: str) -> Tuple[int, str, bool]:
-        """Generate a single audio sample with given config."""
-        try:
-            # Apply configuration
-            self.apply_config(config)
+        """
+        Generate a single audio sample with given config.
 
+        Thread-safe: Passes config as parameter instead of modifying shared VoiceConfig.
+        """
+        try:
             # Generate filename
             timestamp = int(time.time())
             filename = self.output_dir / f"sample_{sample_num}_round{self.round_number}_{timestamp}.wav"
 
-            # Generate speech
+            # Generate speech with thread-safe config passing
+            # Each thread gets its own config dict, no shared state modification
             success = self.voice_handler._speak_coqui(
                 text=text,
                 output_file=str(filename),
-                play_audio=False
+                play_audio=False,
+                config=config  # Pass config directly (thread-safe!)
             )
 
             if success:
@@ -221,6 +244,8 @@ class AccentTuner:
 
         except Exception as e:
             print(f"❌ Error generating sample {sample_num}: {e}")
+            import traceback
+            traceback.print_exc()
             return sample_num, "", False
 
     def generate_samples_parallel(self, configs: List[Dict], text: str) -> Dict[int, str]:

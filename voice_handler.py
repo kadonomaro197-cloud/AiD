@@ -263,18 +263,55 @@ class VoiceHandler:
             print(f"[VOICE] TTS error: {e}")
             return False
 
-    def _speak_coqui(self, text: str, output_file: Optional[str] = None, play_audio: bool = True) -> bool:
-        """Speak using Coqui TTS with voice cloning."""
+    def _speak_coqui(self, text: str, output_file: Optional[str] = None, play_audio: bool = True,
+                     config: Optional[dict] = None) -> bool:
+        """
+        Speak using Coqui TTS with voice cloning.
+
+        Args:
+            text: Text to speak
+            output_file: Optional path to save audio file
+            play_audio: Whether to play the audio (default: True)
+            config: Optional config dict with TTS parameters (thread-safe).
+                   If None, uses VoiceConfig class attributes.
+
+        Thread-safe when config dict is provided.
+        """
         try:
             import tempfile
+            import random
 
-            # Select reference audio based on config
-            ref_index = VoiceConfig.REFERENCE_SAMPLE_INDEX
+            # Use provided config or fall back to VoiceConfig class
+            if config is None:
+                temperature = VoiceConfig.TEMPERATURE
+                repetition_penalty = VoiceConfig.REPETITION_PENALTY
+                length_penalty = VoiceConfig.LENGTH_PENALTY
+                top_k = VoiceConfig.TOP_K
+                top_p = VoiceConfig.TOP_P
+                enable_text_splitting = VoiceConfig.ENABLE_TEXT_SPLITTING
+                speed = getattr(VoiceConfig, 'SPEED', 1.0)
+                ref_index = VoiceConfig.REFERENCE_SAMPLE_INDEX
+            else:
+                temperature = config.get("TEMPERATURE", 0.65)
+                repetition_penalty = config.get("REPETITION_PENALTY", 2.5)
+                length_penalty = config.get("LENGTH_PENALTY", 1.0)
+                top_k = config.get("TOP_K", 50)
+                top_p = config.get("TOP_P", 0.85)
+                enable_text_splitting = config.get("ENABLE_TEXT_SPLITTING", True)
+                speed = config.get("SPEED", 1.0)
+                ref_index = config.get("REFERENCE_SAMPLE_INDEX", 0)
+
+            # Select reference audio with bounds checking (thread-safe)
+            if not self.reference_audio or len(self.reference_audio) == 0:
+                print("[VOICE] No reference audio available")
+                return False
+
             if ref_index == -1:
-                import random
                 speaker_wav = random.choice(self.reference_audio)
             else:
-                speaker_wav = self.reference_audio[ref_index % len(self.reference_audio)]
+                # Safe index calculation with bounds checking
+                safe_index = abs(ref_index) % len(self.reference_audio)
+                speaker_wav = self.reference_audio[safe_index]
 
             # Generate output path
             temp_created = False
@@ -295,16 +332,16 @@ class VoiceHandler:
 
             # Add optional parameters (some XTTS versions may not support all)
             try:
-                tts_kwargs["temperature"] = VoiceConfig.TEMPERATURE
-                tts_kwargs["repetition_penalty"] = VoiceConfig.REPETITION_PENALTY
-                tts_kwargs["length_penalty"] = VoiceConfig.LENGTH_PENALTY
-                tts_kwargs["top_k"] = VoiceConfig.TOP_K
-                tts_kwargs["top_p"] = VoiceConfig.TOP_P
-                tts_kwargs["enable_text_splitting"] = VoiceConfig.ENABLE_TEXT_SPLITTING
+                tts_kwargs["temperature"] = temperature
+                tts_kwargs["repetition_penalty"] = repetition_penalty
+                tts_kwargs["length_penalty"] = length_penalty
+                tts_kwargs["top_k"] = top_k
+                tts_kwargs["top_p"] = top_p
+                tts_kwargs["enable_text_splitting"] = enable_text_splitting
 
                 # Speed is not always supported
-                if hasattr(VoiceConfig, 'SPEED') and VoiceConfig.SPEED != 1.0:
-                    tts_kwargs["speed"] = VoiceConfig.SPEED
+                if speed != 1.0:
+                    tts_kwargs["speed"] = speed
             except:
                 pass  # If parameters not supported, use defaults
 
