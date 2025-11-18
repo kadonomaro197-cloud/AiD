@@ -995,10 +995,12 @@ async def on_ready():
 
     # Initialize voice handler
     try:
-        voice_handler.init_voice(bot)
+        voice_handler.init_voice()  # Fixed: init_voice() takes no parameters
         print("[VOICE] Voice handler initialized successfully")
     except Exception as e:
         print(f"[VOICE] Failed to initialize voice handler: {e}")
+        import traceback
+        traceback.print_exc()
 
     await startup_checks()
 

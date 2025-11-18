@@ -30,15 +30,63 @@ class VoiceHandler:
         self.stt_recognizer = None
         self.voice_samples_dir = Path(__file__).parent / "voice_samples" / "reference"
         self.reference_audio = None
+        self.ffmpeg_available = False
 
         # Discord voice channel support
         self.voice_client = None
         self.is_in_voice = False
         self.current_voice_channel = None
 
+        self._check_ffmpeg()
         self._init_tts()
         self._init_stt()
-    
+
+    def _check_ffmpeg(self):
+        """Check if FFmpeg is installed and available."""
+        import subprocess
+        import shutil
+
+        print("[VOICE DEBUG] Checking FFmpeg availability...")
+
+        # Method 1: Check if ffmpeg command exists
+        ffmpeg_path = shutil.which("ffmpeg")
+        if ffmpeg_path:
+            print(f"[VOICE DEBUG] FFmpeg found at: {ffmpeg_path}")
+            self.ffmpeg_available = True
+        else:
+            print("[VOICE WARNING] FFmpeg not found in PATH")
+            self.ffmpeg_available = False
+
+        # Method 2: Try to get FFmpeg version
+        if self.ffmpeg_available:
+            try:
+                result = subprocess.run(
+                    ["ffmpeg", "-version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if result.returncode == 0:
+                    version_line = result.stdout.split('\n')[0]
+                    print(f"[VOICE DEBUG] {version_line}")
+                    self.ffmpeg_available = True
+                else:
+                    print("[VOICE WARNING] FFmpeg found but failed to execute")
+                    self.ffmpeg_available = False
+            except subprocess.TimeoutExpired:
+                print("[VOICE WARNING] FFmpeg check timed out")
+                self.ffmpeg_available = False
+            except Exception as e:
+                print(f"[VOICE WARNING] FFmpeg check error: {e}")
+                self.ffmpeg_available = False
+
+        if self.ffmpeg_available:
+            print("[VOICE] ✅ FFmpeg is available for Discord voice streaming")
+        else:
+            print("[VOICE] ⚠️ FFmpeg NOT available - Discord voice will NOT work")
+            print("[VOICE] ⚠️ Install FFmpeg from: https://ffmpeg.org/download.html")
+            print("[VOICE] ⚠️ Make sure FFmpeg is added to your system PATH")
+
     def _init_tts(self):
         """Initialize Text-to-Speech (Coqui preferred, pyttsx3 fallback)."""
         # Try Coqui TTS with voice cloning first
@@ -74,32 +122,53 @@ class VoiceHandler:
     def _init_coqui_tts(self) -> bool:
         """Initialize Coqui TTS with voice cloning."""
         try:
+            print("[VOICE DEBUG] Attempting to initialize Coqui TTS...")
             from TTS.api import TTS
 
+            print("[VOICE DEBUG] TTS module imported successfully")
+
             # Load reference audio samples
+            print(f"[VOICE DEBUG] Loading reference audio from: {self.voice_samples_dir}")
             self.reference_audio = self._load_reference_audio()
 
             if not self.reference_audio:
-                print("[VOICE] No reference audio found in voice_samples/reference/")
-                print("[VOICE] See VOICE_CLONING_GUIDE.md for setup instructions")
+                print(f"[VOICE ERROR] No reference audio found in {self.voice_samples_dir}")
+                print("[VOICE ERROR] Voice cloning requires reference audio samples")
+                print("[VOICE ERROR] See VOICE_CLONING_GUIDE.md for setup instructions")
                 return False
+
+            print(f"[VOICE DEBUG] Found {len(self.reference_audio)} reference samples:")
+            for i, sample in enumerate(self.reference_audio):
+                print(f"[VOICE DEBUG]   [{i}] {sample}")
 
             # Initialize Coqui TTS with voice cloning model
             # Using XTTS v2 - supports voice cloning with reference audio
-            self.tts_engine = TTS("tts_models/multilingual/multi-dataset/xtts_v2")
+            print("[VOICE DEBUG] Loading XTTS v2 model (this may take a moment)...")
+            try:
+                self.tts_engine = TTS("tts_models/multilingual/multi-dataset/xtts_v2")
+                print("[VOICE DEBUG] XTTS v2 model loaded successfully")
+            except Exception as model_error:
+                print(f"[VOICE ERROR] Failed to load XTTS v2 model: {model_error}")
+                import traceback
+                traceback.print_exc()
+                return False
+
             self.tts_mode = 'coqui'
             self.tts_enabled = True
 
-            print(f"[VOICE] TTS initialized with Coqui TTS (voice cloning)")
-            print(f"[VOICE] Using {len(self.reference_audio)} reference sample(s)")
+            print(f"[VOICE] ✅ TTS initialized with Coqui TTS (voice cloning)")
+            print(f"[VOICE] ✅ Using {len(self.reference_audio)} reference sample(s)")
 
             return True
 
-        except ImportError:
-            print("[VOICE] Coqui TTS not available (install TTS)")
+        except ImportError as import_error:
+            print(f"[VOICE ERROR] Coqui TTS not available: {import_error}")
+            print("[VOICE ERROR] Install with: pip install TTS")
             return False
         except Exception as e:
-            print(f"[VOICE] Coqui TTS initialization error: {e}")
+            print(f"[VOICE ERROR] Coqui TTS initialization error: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def _load_reference_audio(self) -> Optional[list]:
@@ -163,13 +232,22 @@ class VoiceHandler:
         try:
             import tempfile
 
+            print(f"[VOICE DEBUG] _speak_coqui called with play_audio={play_audio}")
+
             # Select reference audio based on config
             ref_index = VoiceConfig.REFERENCE_SAMPLE_INDEX
             if ref_index == -1:
                 import random
                 speaker_wav = random.choice(self.reference_audio)
+                print(f"[VOICE DEBUG] Using random reference sample: {speaker_wav}")
             else:
                 speaker_wav = self.reference_audio[ref_index % len(self.reference_audio)]
+                print(f"[VOICE DEBUG] Using reference sample {ref_index}: {speaker_wav}")
+
+            # Verify reference audio exists
+            if not os.path.exists(speaker_wav):
+                print(f"[VOICE ERROR] Reference audio file not found: {speaker_wav}")
+                return False
 
             # Generate output path
             temp_created = False
@@ -178,6 +256,9 @@ class VoiceHandler:
                 output_file = temp_file.name
                 temp_file.close()
                 temp_created = True
+                print(f"[VOICE DEBUG] Created temp output file: {output_file}")
+            else:
+                print(f"[VOICE DEBUG] Using provided output file: {output_file}")
 
             # Generate speech with voice cloning and configured parameters
             # Build kwargs based on what the model supports
@@ -200,31 +281,74 @@ class VoiceHandler:
                 # Speed is not always supported
                 if hasattr(VoiceConfig, 'SPEED') and VoiceConfig.SPEED != 1.0:
                     tts_kwargs["speed"] = VoiceConfig.SPEED
-            except:
-                pass  # If parameters not supported, use defaults
 
-            self.tts_engine.tts_to_file(**tts_kwargs)
+                print(f"[VOICE DEBUG] Voice parameters: temp={VoiceConfig.TEMPERATURE}, "
+                      f"rep_pen={VoiceConfig.REPETITION_PENALTY}, "
+                      f"len_pen={VoiceConfig.LENGTH_PENALTY}, "
+                      f"top_k={VoiceConfig.TOP_K}, top_p={VoiceConfig.TOP_P}, "
+                      f"speed={VoiceConfig.SPEED}")
+            except Exception as param_error:
+                print(f"[VOICE WARNING] Error setting some parameters: {param_error}")
+
+            print("[VOICE DEBUG] Calling Coqui TTS engine...")
+            import time
+            start_time = time.time()
+
+            try:
+                self.tts_engine.tts_to_file(**tts_kwargs)
+                generation_time = time.time() - start_time
+                print(f"[VOICE DEBUG] TTS generation completed in {generation_time:.2f}s")
+            except Exception as tts_error:
+                print(f"[VOICE ERROR] TTS engine failed: {tts_error}")
+                import traceback
+                traceback.print_exc()
+                return False
+
+            # Verify output file was created
+            if not os.path.exists(output_file):
+                print(f"[VOICE ERROR] Output file was not created: {output_file}")
+                return False
+
+            file_size = os.path.getsize(output_file)
+            print(f"[VOICE DEBUG] Output file size: {file_size} bytes")
+
+            if file_size == 0:
+                print("[VOICE ERROR] Output file is empty")
+                return False
 
             # Play the audio if requested (for local playback, not Discord)
             if play_audio:
+                print("[VOICE DEBUG] Playing audio locally...")
                 try:
                     import sounddevice as sd
                     import soundfile as sf
                     data, samplerate = sf.read(output_file)
+                    print(f"[VOICE DEBUG] Audio data: {len(data)} samples at {samplerate} Hz")
                     sd.play(data, samplerate)
                     sd.wait()
+                    print("[VOICE DEBUG] Audio playback completed")
                 except ImportError:
-                    print("[VOICE] sounddevice/soundfile not installed for audio playback")
-                    print("[VOICE] Install with: pip install sounddevice soundfile")
+                    print("[VOICE WARNING] sounddevice/soundfile not installed for audio playback")
+                    print("[VOICE WARNING] Install with: pip install sounddevice soundfile")
+                except Exception as playback_error:
+                    print(f"[VOICE ERROR] Audio playback failed: {playback_error}")
+                    import traceback
+                    traceback.print_exc()
 
             # Clean up temp file if created and not needed
             if temp_created and play_audio:
-                os.remove(output_file)
+                try:
+                    os.remove(output_file)
+                    print(f"[VOICE DEBUG] Cleaned up temp file: {output_file}")
+                except Exception as cleanup_error:
+                    print(f"[VOICE WARNING] Failed to cleanup temp file: {cleanup_error}")
 
             return True
 
         except Exception as e:
-            print(f"[VOICE] Coqui TTS error: {e}")
+            print(f"[VOICE ERROR] Coqui TTS error: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def _speak_pyttsx3(self, text: str) -> bool:
@@ -322,7 +446,9 @@ class VoiceHandler:
             'tts_mode': self.tts_mode,
             'voice_cloning': self.tts_mode == 'coqui',
             'reference_samples': len(self.reference_audio) if self.reference_audio else 0,
-            'stt': self.stt_enabled
+            'stt': self.stt_enabled,
+            'ffmpeg': self.ffmpeg_available,
+            'discord_voice_ready': self.tts_enabled and self.ffmpeg_available and self.tts_mode == 'coqui'
         }
 
     # =======================
@@ -400,76 +526,146 @@ class VoiceHandler:
         Returns:
             bool: True if successfully spoke, False otherwise
         """
+        temp_path = None
         try:
             import discord
             import asyncio
             import tempfile
 
+            print(f"[VOICE DEBUG] Starting speak_in_voice for text: '{text[:50]}...'")
+            print(f"[VOICE DEBUG] TTS mode: {self.tts_mode}, TTS enabled: {self.tts_enabled}")
+            print(f"[VOICE DEBUG] Voice client connected: {self.voice_client and self.voice_client.is_connected()}")
+            print(f"[VOICE DEBUG] FFmpeg available: {self.ffmpeg_available}")
+
+            if not self.ffmpeg_available:
+                print("[VOICE ERROR] FFmpeg is not available - cannot stream to Discord")
+                print("[VOICE ERROR] Install FFmpeg and add to PATH: https://ffmpeg.org/download.html")
+                return False
+
             if not self.voice_client or not self.voice_client.is_connected():
-                print("[VOICE] Not in a voice channel")
+                print("[VOICE ERROR] Not in a voice channel")
                 return False
 
             if not self.tts_enabled:
-                print("[VOICE] TTS not enabled")
+                print(f"[VOICE ERROR] TTS not enabled. Mode: {self.tts_mode}")
+                if self.tts_mode == 'pyttsx3':
+                    print("[VOICE ERROR] System is using pyttsx3 fallback instead of Coqui TTS")
+                    print("[VOICE ERROR] This means Coqui TTS failed to initialize")
                 return False
 
             # Clean text for speech
             clean_text = self._clean_for_speech(text)
+            print(f"[VOICE DEBUG] Cleaned text: '{clean_text[:50]}...'")
 
             # Apply emotion-based voice parameters if emotion provided
             if emotion:
                 try:
                     from emotion_voice_mapper import set_voice_for_emotion
+                    print(f"[VOICE DEBUG] Applying emotion: {emotion} with intensity: {intensity:.2f}")
                     set_voice_for_emotion(emotion, intensity)
                     print(f"[VOICE] Applied emotion: {emotion} (intensity: {intensity:.2f})")
                 except ImportError:
-                    print("[VOICE] Emotion voice mapper not available, using default parameters")
+                    print("[VOICE WARNING] Emotion voice mapper not available, using default parameters")
+                except Exception as e:
+                    print(f"[VOICE ERROR] Failed to apply emotion parameters: {e}")
+                    import traceback
+                    traceback.print_exc()
 
             # Generate speech to a temporary file
             with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
                 temp_path = temp_file.name
 
+            print(f"[VOICE DEBUG] Created temp file: {temp_path}")
+
             # Generate the audio (don't play it locally, we'll stream to Discord)
             if self.tts_mode == 'coqui':
+                print("[VOICE DEBUG] Generating audio with Coqui TTS...")
                 success = self._speak_coqui(clean_text, output_file=temp_path, play_audio=False)
+                print(f"[VOICE DEBUG] Coqui TTS generation result: {success}")
             else:
                 # pyttsx3 can't easily save to file, so we'll skip voice for fallback
-                print("[VOICE] pyttsx3 doesn't support Discord voice streaming")
+                print(f"[VOICE ERROR] Cannot use {self.tts_mode} for Discord voice streaming")
+                print("[VOICE ERROR] pyttsx3 doesn't support Discord voice streaming")
+                print("[VOICE ERROR] Coqui TTS is required for Discord voice. Check installation.")
                 return False
 
             if not success:
-                print("[VOICE] Failed to generate speech")
+                print("[VOICE ERROR] Failed to generate speech audio file")
+                return False
+
+            # Verify the file was created and has content
+            if not os.path.exists(temp_path):
+                print(f"[VOICE ERROR] Temp audio file was not created: {temp_path}")
+                return False
+
+            file_size = os.path.getsize(temp_path)
+            print(f"[VOICE DEBUG] Generated audio file size: {file_size} bytes")
+
+            if file_size == 0:
+                print("[VOICE ERROR] Generated audio file is empty")
+                return False
+
+            # Check FFmpeg availability
+            print("[VOICE DEBUG] Attempting to create FFmpeg audio source...")
+            try:
+                audio_source = discord.FFmpegPCMAudio(temp_path)
+                print("[VOICE DEBUG] FFmpeg audio source created successfully")
+            except Exception as ffmpeg_error:
+                print(f"[VOICE ERROR] Failed to create FFmpeg audio source: {ffmpeg_error}")
+                print("[VOICE ERROR] FFmpeg may not be installed or not in PATH")
+                print("[VOICE ERROR] Install FFmpeg: https://ffmpeg.org/download.html")
                 return False
 
             # Play the audio in Discord voice channel
             if self.voice_client.is_playing():
+                print("[VOICE DEBUG] Stopping current audio playback")
                 self.voice_client.stop()
 
-            audio_source = discord.FFmpegPCMAudio(temp_path)
+            print("[VOICE DEBUG] Starting audio playback...")
             self.voice_client.play(audio_source)
 
             # Wait for playback to finish
+            playback_timeout = 30  # 30 second timeout
+            elapsed = 0
             while self.voice_client.is_playing():
                 await asyncio.sleep(0.1)
+                elapsed += 0.1
+                if elapsed > playback_timeout:
+                    print("[VOICE WARNING] Playback timeout exceeded")
+                    break
+
+            print(f"[VOICE DEBUG] Playback completed after {elapsed:.1f}s")
 
             # Clean up temp file
             try:
-                os.remove(temp_path)
-            except:
-                pass
+                if temp_path and os.path.exists(temp_path):
+                    os.remove(temp_path)
+                    print(f"[VOICE DEBUG] Cleaned up temp file: {temp_path}")
+            except Exception as cleanup_error:
+                print(f"[VOICE WARNING] Failed to cleanup temp file: {cleanup_error}")
 
-            print(f"[VOICE] Spoke in voice channel: '{clean_text[:50]}...'")
+            print(f"[VOICE] ✅ Successfully spoke in voice channel: '{clean_text[:50]}...'")
             return True
 
         except ImportError as e:
-            print(f"[VOICE] Missing dependency for Discord voice: {e}")
-            print("[VOICE] Install: pip install discord.py[voice] ffmpeg-python")
-            return False
-        except Exception as e:
-            print(f"[VOICE] Error speaking in voice channel: {e}")
+            print(f"[VOICE ERROR] Missing dependency for Discord voice: {e}")
+            print("[VOICE ERROR] Install: pip install discord.py[voice]")
+            print("[VOICE ERROR] Install FFmpeg: https://ffmpeg.org/download.html")
             import traceback
             traceback.print_exc()
             return False
+        except Exception as e:
+            print(f"[VOICE ERROR] Unexpected error in speak_in_voice: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+        finally:
+            # Ensure temp file cleanup even on error
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass
 
     def speak_with_emotion(self, text: str, emotion: str, intensity: float = 0.5,
                           output_file: Optional[str] = None) -> bool:
