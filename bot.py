@@ -936,11 +936,14 @@ Previous response was TOO LONG. Keep under 300 words this time.
     except Exception as e:
         print(f"[WARN] Failed to save debug log: {e}")
 
-    # Console output
-    print(f"[INFO] Response in {end_time - start_time:.2f}s | Mode: {mode.upper()}")
-    print(f"       [ORCHESTRATOR] Memories used: {len(orchestrator_memories)}")
-    print(f"       [MEMORY] Runtime: {memory.get_runtime_size()} | STM: {len(mem_stm.get_all())}")
-    print(f"       [RELATIONSHIP] Stage: {relationship.get_current_stage()} | Intimacy: {relationship.get_intimacy_score():.0f}/100")
+    # Console output (wrapped in try-except to prevent blocking return)
+    try:
+        print(f"[INFO] Response in {end_time - start_time:.2f}s | Mode: {mode.upper()}")
+        print(f"       [ORCHESTRATOR] Memories used: {len(orchestrator_memories)}")
+        print(f"       [MEMORY] Runtime: {memory.get_runtime_size()} | STM: {len(mem_stm.get_all())}")
+        print(f"       [RELATIONSHIP] Stage: {relationship.get_current_stage()} | Intimacy: {relationship.get_intimacy_score():.0f}/100")
+    except Exception as debug_e:
+        print(f"[WARN] Debug output failed: {debug_e}")
 
     print(f"[DEBUG] About to return reply: {len(reply)} chars")
     return reply
