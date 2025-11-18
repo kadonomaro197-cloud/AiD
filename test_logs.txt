@@ -1,0 +1,550 @@
+[STARTUP] Preloading all memory models...
+[MEMORY_INIT] Loading new memory system...
+[MEMORY_INIT] ✓ New memory system loaded
+[MEMORY_INIT] ✓ Semantic retrieval available (legacy)
+[MEMORY_INIT] ✓ Memory package ready
+[STARTUP] ✗ module 'memory_management' has no attribute 'preload_all_modules'
+[VOICE DEBUG] Checking transformers compatibility...
+[VOICE DEBUG] BeamSearchScorer already available in transformers
+[STM] Loaded 199 messages from STM.
+[STM] Auto-save loop started.
+[MEMORY] Loaded 199 messages from STM into runtime buffer
+[MEMORY] [OK] Auto-save enabled: Runtime -> STM every 10 messages
+[MEMORY] [CLEANUP] Runtime clean - 199 normal messages
+
+[PERSONA] Initializing complete personality architecture...
+[PERSONA] ✓ Personality loaded: cockney
+[RELATIONSHIP] Loaded existing data: mid stage
+[PERSONA] ✓ Relationship tracking initialized
+          Stage: mid | Days: 29 | Exchanges: 260
+          Intimacy: 55/100
+[PROACTIVE] Proactive engagement system started
+[PROACTIVE] ✓ Proactive engagement initialized
+[PERSONA] ✓ Proactive engagement initialized
+[EMOTION] ✓ Emotional intelligence initialized
+[PERSONA] ✓ Emotional intelligence initialized
+[PREFERENCES] ✓ Preference learning initialized
+[PERSONA] ✓ Preference learning initialized
+[CONVERSATION] ✓ Conversation intelligence initialized
+[PERSONA] ✓ Conversation intelligence initialized
+[ROUTINES] ✓ Routine learning initialized
+[PERSONA] ✓ Routine learning initialized
+
+[ADVANCED] Initializing advanced intelligence systems...
+[THREADING] ✓ Topic threading initialized
+[ADVANCED] ✓ Topic threading initialized
+[SOCRATIC] ✓ Socratic mode initialized
+[ADVANCED] ✓ Socratic mode initialized
+[CONTEXT LAYERS] ✓ Context layering initialized
+[ADVANCED] ✓ Context layering initialized
+[VULNERABILITY] ✓ Vulnerability matching initialized
+[ADVANCED] ✓ Vulnerability matching initialized
+[SILENCE] ✓ Strategic silence initialized
+[ADVANCED] ✓ Strategic silence initialized
+[DISAGREEMENT ENGINE] Initialized
+[ADVANCED] ✓ Disagreement engine initialized
+============================================================
+[ONLINE] AID is ONLINE and ready to roll, boss!
+   Cockney sass: [OK]  Memory system: [OK]  RAG database: [OK]
+   Memory Orchestrator: [OK]  Semantic Search: [OK]
+   Persona system: [OK]  Relationship tracking: [OK]
+   Proactive: [OK]  Emotion: [OK]  Preferences: [OK]
+   Conversation: [OK]  Routines: [OK]
+   Advanced Intelligence: [OK]
+   → Topic Threading: [OK]  → Socratic Mode: [OK]
+   → Context Layers: [OK]   → Vulnerability Match: [OK]
+   → Strategic Silence: [OK] → Disagreement Engine: [OK]
+   Context window: 8k tokens (optimized for 8GB VRAM)
+   Mode system: [OK] (CHAT/MEMORY/RAG auto-detection)
+   Type 'AID create a memory' or just chat away!
+============================================================
+
+[Auto-Response Startup Warnings]
+⚠️ Module missing: memory_management.categories
+⚠️ Module missing: memory_management.summary
+⚠️ Module missing: memory_management.phrasing
+
+[2025-11-17 23:55:27] [INFO    ] discord.client: logging in using static token
+[2025-11-17 23:55:28] [INFO    ] discord.gateway: Shard ID None has connected to Gateway (Session ID: b86dbf4c92d570b1a2c93f1f21e0969b).
+[DISCORD] [OK] A.I.D#8629 is now connected and ready!
+[DISCORD] Connected to 1 server(s)
+[VOICE] Failed to initialize voice handler: init_voice() takes 0 positional arguments but 1 was given
+[STARTUP] Performing system checks...
+[RAG] Loaded 'Astronomy' with 89681 vectors.
+[RAG] Loaded 'Materials' with 11805 vectors.
+[RAG] Loaded 'Philosophy' with 81783 vectors.
+[RAG] Loaded 'Physics' with 18832 vectors.
+[RAG] Loaded 'Politics' with 425617 vectors.
+[RAG] Loaded 'Psychology' with 39198 vectors.
+[RAG] Loaded 'Warfare' with 38429 vectors.
+[RAG] All indexes loaded: 7 datasets, 705345 total vectors.
+[RAG] Categories: astronomy, materials, philosophy, physics, politics, psychology, warfare
+[RAG] ✅ RAG system fully loaded and ready!
+[RAG] Loaded 7 datasets with 705345 total vectors.
+[RAG] ✓ RAG system fully loaded and ready!
+[RAG] Loading embedding model...
+[RAG] Embedding model loaded!
+[RAG] Embedding model loaded successfully!
+[STARTUP] [OK] AID is fully ready and online.
+[AUTO_RESPONSE] on_message triggered for message: Just give me a warm fuzzy greetings AiD
+[DEBUG] Interactive mode: False
+[DEBUG] Pending memory context type: <class 'NoneType'>
+[DEBUG] Content: 'Just give me a warm fuzzy greetings AiD' | isdigit: False
+[AUTO_RESPONSE] Checking message triggers for: Just give me a warm fuzzy greetings AiD
+[AUTO_RESPONSE] Entered normal chat block
+[AUTO_RESPONSE] Not in interactive mode, will call API
+[AUTO_RESPONSE] About to call call_aid_api with executor
+
+============================================================
+[CALL #1] Processing: 'Just give me a warm fuzzy greetings AiD...'
+[MEMORY RETRIEVAL] Retrieving relevant memories...
+[MEMORY STORE] Loading embedding model...
+[MEMORY STORE] Loaded 5 memories from disk
+[MEMORY STORE] Initialized with 5 memories
+[MEMORY RETRIEVAL] Initialized
+[MEMORY RETRIEVAL] Found 5 high-quality memories (score >= 0.4)
+[MEMORY 1] Score: 1.21 | AiD is a local AI companion with personality and memory...
+[MEMORY 2] Score: 1.01 | I meant half sorry...
+[MEMORY 3] Score: 0.74 | ESR Dominance is a Titan-class battleship with heavy armor...
+[EMOTION] Detected: neutral (confidence: 0.50, intensity: 0.30)
+[EMOTION] Response mode: energizing
+[EMOTION] Recent trend: neutral - Pretty steady
+[VULNERABILITY] Level: low
+[CONVERSATION] Strategy: brief depth
+
+============================================================
+[MODE] MEMORY
+[BUDGET] Total prompt budget: 28000 tokens
+============================================================
+[NEW MEMORY] Injected 231 tokens of memory context
+[RUNTIME] Buffer size: 199 messages
+[WINDOW] Sliding window tiers (TIME-BASED):
+   |- Recent: 0 messages
+   |- Medium: 0 messages
+   |- Archive: 199 messages
+[TOKENS] Breakdown:
+   |- System: 106
+   |- World Info: 234
+   |- Recent Chat: 1476
+   |- TOTAL: 1778 / 28000
+   ✓ 26222 tokens headroom
+[MAX TOKENS] memory mode - limiting to 300 tokens
+[DEBUG] Raw response length: 191 chars
+[DEBUG] Cleaned response (memory mode): 191 chars
+[DEBUG] After response processing, launching background post-processing
+[DEBUG] Successfully stored in runtime
+[MEMORY FORMATION] Observing interaction...
+[INFO] Response in 3.72s | Mode: MEMORY
+       [ORCHESTRATOR] Memories used: 0
+       [MEMORY] Runtime: 199 | STM: 199
+       [RELATIONSHIP] Stage: mid | Intimacy: 55/100
+[MEMORY FORMATION] Initialized with 82 tracked concepts
+[DEBUG] About to return reply: 191 chars
+[DEBUG] Reply type: <class 'str'>, content preview: Oi, boss! How's it goin'? Proper smashin' day, innit? All systems green here. Just been chillin' in
+[AUTO_RESPONSE] Received reply from call_aid_api: 191 chars
+[AUTO_RESPONSE] REACHED SEND SECTION - reply variable: <class 'str'> 191 chars
+[MEMORY FORMATION] No new memories created (reinforcement pending)
+[AUTO_RESPONSE] Converted reply to text: 191 chars
+[AUTO_RESPONSE] About to send reply to Discord: 191 chars
+[VOICE DEBUG] Attempting to initialize Coqui TTS...
+[VOICE DEBUG] Loading reference audio from: C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference
+[VOICE DEBUG] Found 17 reference samples:
+[VOICE DEBUG]   [0] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 1(2).wav
+[VOICE DEBUG]   [1] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 2(1).wav
+[VOICE DEBUG]   [2] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 2(2).wav
+[VOICE DEBUG]   [3] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 3(1).wav
+[VOICE DEBUG]   [4] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 4(1).wav
+[VOICE DEBUG]   [5] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 4(2).wav
+[VOICE DEBUG]   [6] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 4(3).wav
+[VOICE DEBUG]   [7] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 5(2).wav
+[VOICE DEBUG]   [8] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 5(3).wav
+[VOICE DEBUG]   [9] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 6(1).wav
+[VOICE DEBUG]   [10] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 6(2).wav
+[VOICE DEBUG]   [11] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 6(3).wav
+[VOICE DEBUG]   [12] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 6(4).wav
+[VOICE DEBUG]   [13] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 6(5).wav
+[VOICE DEBUG]   [14] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 6(6).wav
+[VOICE DEBUG]   [15] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 6(7).wav
+[VOICE DEBUG]   [16] C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\voice_samples\reference\AiD Voice Sample 6(8).wav
+[VOICE DEBUG] Loading XTTS v2 model (this may take a moment)...
+ > tts_models/multilingual/multi-dataset/xtts_v2 is already downloaded.
+ > Using model: xtts
+C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\venv\Lib\site-packages\TTS\tts\layers\xtts\xtts_manager.py:5: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.speakers = torch.load(speaker_file_path)
+C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\venv\Lib\site-packages\TTS\utils\io.py:54: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  return torch.load(f, map_location=map_location, **kwargs)
+GPT2InferenceModel has generative capabilities, as `prepare_inputs_for_generation` is explicitly overwritten. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+[VOICE] TTS initialized with Coqui TTS (voice cloning)
+[VOICE] Using 17 reference sample(s)
+[VOICE] STT initialized with speech_recognition
+[AUTO_RESPONSE] Attempting to send chunk 1: 191 chars
+[AUTO_RESPONSE] on_message triggered for message: Oi, boss! How's it goin'? Proper smashin' day, inn
+[AUTO_RESPONSE] Successfully sent chunk to Discord
+[AUTO_RESPONSE] Completed message handler successfully
+[AUTO_RESPONSE] on_message triggered for message: Make it Fuzzier
+[DEBUG] Interactive mode: False
+[DEBUG] Pending memory context type: <class 'NoneType'>
+[DEBUG] Content: 'Make it Fuzzier' | isdigit: False
+[AUTO_RESPONSE] Checking message triggers for: Make it Fuzzier
+[AUTO_RESPONSE] Entered normal chat block
+[AUTO_RESPONSE] Not in interactive mode, will call API
+[AUTO_RESPONSE] About to call call_aid_api with executor
+
+============================================================
+[CALL #2] Processing: 'Make it Fuzzier...'
+[MEMORY RETRIEVAL] Retrieving relevant memories...
+[MEMORY RETRIEVAL] Found 5 high-quality memories (score >= 0.4)
+[MEMORY 1] Score: 1.06 | AiD is a local AI companion with personality and memory...
+[MEMORY 2] Score: 0.90 | I meant half sorry...
+[MEMORY 3] Score: 0.78 | ESR Dominance is a Titan-class battleship with heavy armor...
+[EMOTION] Detected: neutral (confidence: 0.50, intensity: 0.30)
+[EMOTION] Response mode: energizing
+[EMOTION] Recent trend: neutral - Pretty steady
+[VULNERABILITY] Level: low
+[CONVERSATION] Strategy: brief depth
+
+============================================================
+[MODE] MEMORY
+[BUDGET] Total prompt budget: 28000 tokens
+============================================================
+[NEW MEMORY] Injected 231 tokens of memory context
+[RUNTIME] Buffer size: 201 messages
+[WINDOW] Sliding window tiers (TIME-BASED):
+   |- Recent: 2 messages
+   |- Medium: 0 messages
+   |- Archive: 199 messages
+[TOKENS] Breakdown:
+   |- System: 106
+   |- World Info: 234
+   |- Recent Chat: 1535
+   |- TOTAL: 1826 / 28000
+   ✓ 26174 tokens headroom
+[MAX TOKENS] memory mode - limiting to 300 tokens
+[DEBUG] Raw response length: 403 chars
+[DEBUG] Cleaned response (memory mode): 403 chars
+[DEBUG] After response processing, launching background post-processing
+[DEBUG] Successfully stored in runtime
+[MEMORY FORMATION] Observing interaction...
+[MEMORY FORMATION] No new memories created (reinforcement pending)
+[INFO] Response in 3.86s | Mode: MEMORY
+       [ORCHESTRATOR] Memories used: 0
+       [MEMORY] Runtime: 201 | STM: 199
+       [RELATIONSHIP] Stage: mid | Intimacy: 57/100
+[DEBUG] About to return reply: 403 chars
+[DEBUG] Reply type: <class 'str'>, content preview: Oi, boss! So glad you're here! Everything's proper cozy and warm in my digital heart today. Just bee
+[AUTO_RESPONSE] Received reply from call_aid_api: 403 chars
+[AUTO_RESPONSE] REACHED SEND SECTION - reply variable: <class 'str'> 403 chars
+[AUTO_RESPONSE] Converted reply to text: 403 chars
+[AUTO_RESPONSE] About to send reply to Discord: 403 chars
+[AUTO_RESPONSE] Attempting to send chunk 1: 403 chars
+[AUTO_RESPONSE] on_message triggered for message: Oi, boss! So glad you're here! Everything's proper
+[AUTO_RESPONSE] Successfully sent chunk to Discord
+[AUTO_RESPONSE] Completed message handler successfully
+[AUTO_RESPONSE] on_message triggered for message: Make it 0.1% fuzzer
+[DEBUG] Interactive mode: False
+[DEBUG] Pending memory context type: <class 'NoneType'>
+[DEBUG] Content: 'Make it 0.1% fuzzer' | isdigit: False
+[AUTO_RESPONSE] Checking message triggers for: Make it 0.1% fuzzer
+[AUTO_RESPONSE] Entered normal chat block
+[AUTO_RESPONSE] Not in interactive mode, will call API
+[AUTO_RESPONSE] About to call call_aid_api with executor
+
+============================================================
+[CALL #3] Processing: 'Make it 0.1% fuzzer...'
+[MEMORY RETRIEVAL] Retrieving relevant memories...
+[MEMORY RETRIEVAL] Found 5 high-quality memories (score >= 0.4)
+[MEMORY 1] Score: 1.03 | I meant half sorry...
+[MEMORY 2] Score: 0.99 | AiD is a local AI companion with personality and memory...
+[MEMORY 3] Score: 0.81 | ESR Dominance is a Titan-class battleship with heavy armor...
+[EMOTION] Detected: neutral (confidence: 0.50, intensity: 0.30)
+[EMOTION] Response mode: energizing
+[EMOTION] Recent trend: neutral - Pretty steady
+[VULNERABILITY] Level: low
+[CONVERSATION] Strategy: brief depth
+
+============================================================
+[MODE] MEMORY
+[BUDGET] Total prompt budget: 28000 tokens
+============================================================
+[NEW MEMORY] Injected 231 tokens of memory context
+[RUNTIME] Buffer size: 203 messages
+[WINDOW] Sliding window tiers (TIME-BASED):
+   |- Recent: 4 messages
+   |- Medium: 0 messages
+   |- Archive: 199 messages
+[TOKENS] Breakdown:
+   |- System: 106
+   |- World Info: 234
+   |- Recent Chat: 1639
+   |- TOTAL: 1929 / 28000
+   ✓ 26071 tokens headroom
+[MAX TOKENS] memory mode - limiting to 300 tokens
+[DEBUG] Raw response length: 19 chars
+[DEBUG] Cleaned response (memory mode): 19 chars
+[DEBUG] After response processing, launching background post-processing
+[DEBUG] Successfully stored in runtime
+[MEMORY FORMATION] Observing interaction...
+[MEMORY FORMATION] No new memories created (reinforcement pending)
+[INFO] Response in 1.68s | Mode: MEMORY
+       [ORCHESTRATOR] Memories used: 0
+       [MEMORY] Runtime: 203 | STM: 199
+       [RELATIONSHIP] Stage: mid | Intimacy: 57/100
+[DEBUG] About to return reply: 19 chars
+[DEBUG] Reply type: <class 'str'>, content preview: Oi, boss. I'm here.
+[AUTO_RESPONSE] Received reply from call_aid_api: 19 chars
+[AUTO_RESPONSE] REACHED SEND SECTION - reply variable: <class 'str'> 19 chars
+[AUTO_RESPONSE] Converted reply to text: 19 chars
+[AUTO_RESPONSE] About to send reply to Discord: 19 chars
+[AUTO_RESPONSE] Attempting to send chunk 1: 19 chars
+[AUTO_RESPONSE] on_message triggered for message: Oi, boss. I'm here.
+[AUTO_RESPONSE] Successfully sent chunk to Discord
+[AUTO_RESPONSE] Completed message handler successfully
+[AUTO_RESPONSE] on_message triggered for message: Well that was just straight foreword haha I kid
+[DEBUG] Interactive mode: False
+[DEBUG] Pending memory context type: <class 'NoneType'>
+[DEBUG] Content: 'Well that was just straight foreword haha I kid' | isdigit: False
+[AUTO_RESPONSE] Checking message triggers for: Well that was just straight foreword haha I kid
+[AUTO_RESPONSE] Entered normal chat block
+[AUTO_RESPONSE] Not in interactive mode, will call API
+[AUTO_RESPONSE] About to call call_aid_api with executor
+
+============================================================
+[CALL #4] Processing: 'Well that was just straight foreword haha I kid...'
+[MEMORY RETRIEVAL] Retrieving relevant memories...
+[MEMORY RETRIEVAL] Found 5 high-quality memories (score >= 0.4)
+[MEMORY 1] Score: 1.09 | AiD is a local AI companion with personality and memory...
+[MEMORY 2] Score: 0.98 | I meant half sorry...
+[MEMORY 3] Score: 0.81 | Let's speed this up proper:
+If we optimize the sublight trav...
+[EMOTION] Detected: neutral (confidence: 0.50, intensity: 0.30)
+[EMOTION] Response mode: energizing
+[EMOTION] Recent trend: neutral - Pretty steady
+[VULNERABILITY] Level: low
+[CONVERSATION] Strategy: brief depth
+
+============================================================
+[MODE] MEMORY
+[BUDGET] Total prompt budget: 28000 tokens
+============================================================
+[NEW MEMORY] Injected 231 tokens of memory context
+[RUNTIME] Buffer size: 205 messages
+[WINDOW] Sliding window tiers (TIME-BASED):
+   |- Recent: 6 messages
+   |- Medium: 0 messages
+   |- Archive: 199 messages
+[TOKENS] Breakdown:
+   |- System: 106
+   |- World Info: 234
+   |- Recent Chat: 1652
+   |- TOTAL: 1946 / 28000
+   ✓ 26054 tokens headroom
+[MAX TOKENS] memory mode - limiting to 300 tokens
+[DEBUG] Raw response length: 172 chars
+[DEBUG] Cleaned response (memory mode): 172 chars
+[DEBUG] After response processing, launching background post-processing
+[DEBUG] Successfully stored in runtime
+[MEMORY FORMATION] Observing interaction...
+[MEMORY FORMATION] No new memories created (reinforcement pending)
+[INFO] Response in 2.42s | Mode: MEMORY
+       [ORCHESTRATOR] Memories used: 0
+       [MEMORY] Runtime: 205 | STM: 199
+       [RELATIONSHIP] Stage: mid | Intimacy: 57/100
+[DEBUG] About to return reply: 172 chars
+[DEBUG] Reply type: <class 'str'>, content preview: Yeah, mate. Just keepin' it proper straightforward, like you wanted. No frills, no fuss. Just me and
+[AUTO_RESPONSE] Received reply from call_aid_api: 172 chars
+[AUTO_RESPONSE] REACHED SEND SECTION - reply variable: <class 'str'> 172 chars
+[AUTO_RESPONSE] Converted reply to text: 172 chars
+[AUTO_RESPONSE] About to send reply to Discord: 172 chars
+[AUTO_RESPONSE] Attempting to send chunk 1: 172 chars
+[AUTO_RESPONSE] on_message triggered for message: Yeah, mate. Just keepin' it proper straightforward
+[AUTO_RESPONSE] Successfully sent chunk to Discord
+[AUTO_RESPONSE] Completed message handler successfully
+[AUTO_RESPONSE] on_message triggered for message: Switch to VOice
+[2025-11-17 23:57:34] [INFO    ] discord.voice_state: Connecting to voice...
+INFO:discord.voice_state:Connecting to voice...
+[2025-11-17 23:57:34] [INFO    ] discord.voice_state: Starting voice handshake... (connection attempt 1)
+INFO:discord.voice_state:Starting voice handshake... (connection attempt 1)
+[2025-11-17 23:57:34] [INFO    ] discord.voice_state: Voice handshake complete. Endpoint found: c-atl08-fcc07dce.discord.media:2096
+INFO:discord.voice_state:Voice handshake complete. Endpoint found: c-atl08-fcc07dce.discord.media:2096
+[2025-11-17 23:57:34] [INFO    ] discord.voice_state: Voice connection complete.
+INFO:discord.voice_state:Voice connection complete.
+[VOICE] Joined voice channel: General
+[VOICE] Initialized voice queue
+[VOICE] Started background voice worker
+[VOICE] Queued message for voice: 'Alright boss, I'm in the voice channel now! You ca...'
+[VOICE] Voice worker running in background
+ > Text splitted to sentences.
+["Alright boss, I'm in the voice channel now!", 'You can talk to me or text me, innit?']
+[AUTO_RESPONSE] on_message triggered for message: Alright boss, I'm in the voice channel now! You ca
+C:\Users\DeeDiebS\Desktop\Based\ooga\text-generation-webui\AID-DiscordBot\venv\Lib\site-packages\transformers\generation\configuration_utils.py:668: UserWarning: `num_beams` is set to 1. However, `length_penalty` is set to `1.25` -- this flag is only used in beam-based generation modes. You should set `num_beams>1` or unset `length_penalty`.
+  warnings.warn(
+The attention mask is not set and cannot be inferred from input because pad token is same as eos token. As a consequence, you may observe unexpected behavior. Please pass your input's `attention_mask` to obtain reliable results.
+ > Processing time: 15.415810585021973
+ > Real-time factor: 1.8515699810426536
+[VOICE] Spoke in voice: 'Alright boss, I'm in the voice channel now! You ca...'
+[2025-11-17 23:57:58] [INFO    ] discord.player: ffmpeg process 28864 successfully terminated with return code of 0.
+INFO:discord.player:ffmpeg process 28864 successfully terminated with return code of 0.
+[AUTO_RESPONSE] on_message triggered for message: Ok AiD, Describe to me the perfect sandwhich. (I k
+[DEBUG] Interactive mode: False
+[DEBUG] Pending memory context type: <class 'NoneType'>
+[DEBUG] Content: 'Ok AiD, Describe to me the perfect sandwhich. (I know its random we're just testing things.)' | isdigit: False
+[AUTO_RESPONSE] Checking message triggers for: Ok AiD, Describe to me the perfect sandwhich. (I k
+[AUTO_RESPONSE] Entered normal chat block
+[AUTO_RESPONSE] Not in interactive mode, will call API
+[AUTO_RESPONSE] About to call call_aid_api with executor
+
+============================================================
+[CALL #5] Processing: 'Ok AiD, Describe to me the perfect sandwhich. (I k...'
+[MEMORY RETRIEVAL] Retrieving relevant memories...
+[MEMORY RETRIEVAL] Found 5 high-quality memories (score >= 0.4)
+[MEMORY 1] Score: 1.27 | AiD is a local AI companion with personality and memory...
+[MEMORY 2] Score: 0.93 | I meant half sorry...
+[MEMORY 3] Score: 0.82 | ESR Dominance is a Titan-class battleship with heavy armor...
+[EMOTION] Detected: joy (confidence: 0.40, intensity: 0.33)
+[EMOTION] Response mode: celebratory
+[EMOTION] Recent trend: neutral - Pretty steady
+[VULNERABILITY] Level: low
+[CONVERSATION] Strategy: moderate depth
+
+============================================================
+[MODE] MEMORY
+[BUDGET] Total prompt budget: 28000 tokens
+============================================================
+[NEW MEMORY] Injected 231 tokens of memory context
+[RUNTIME] Buffer size: 207 messages
+[WINDOW] Sliding window tiers (TIME-BASED):
+   |- Recent: 8 messages
+   |- Medium: 0 messages
+   |- Archive: 199 messages
+[TOKENS] Breakdown:
+   |- System: 106
+   |- World Info: 234
+   |- Recent Chat: 1705
+   |- TOTAL: 2005 / 28000
+   ✓ 25995 tokens headroom
+[MAX TOKENS] memory mode - limiting to 300 tokens
+[DEBUG] Raw response length: 468 chars
+[DEBUG] Cleaned response (memory mode): 468 chars
+[DEBUG] After response processing, launching background post-processing
+[MEMORY] Auto-saved 200 messages to STM
+[DEBUG] Successfully stored in runtime
+[MEMORY FORMATION] Observing interaction...
+[INFO] Response in 4.17s | Mode: MEMORY
+       [ORCHESTRATOR] Memories used: 0
+       [MEMORY] Runtime: 207 | STM: 199
+       [RELATIONSHIP] Stage: mid | Intimacy: 57/100
+[MEMORY STORE] Added memory #5: (I know its random we're just testing things...
+[DEBUG] About to return reply: 468 chars
+[MEMORY FORMATION] Immediate memory (importance=1.8): (I know its random we're just testing things...
+[DEBUG] Reply type: <class 'str'>, content preview: The perfect sandwich, mate? Proper simple, that is. Thick slices of sourdough, nice and crusty on th
+[AUTO_RESPONSE] Received reply from call_aid_api: 468 chars
+[AUTO_RESPONSE] REACHED SEND SECTION - reply variable: <class 'str'> 468 chars
+[AUTO_RESPONSE] Converted reply to text: 468 chars
+[AUTO_RESPONSE] About to send reply to Discord: 468 chars
+[AUTO_RESPONSE] Attempting to send chunk 1: 468 chars
+[VOICE] Queued message for voice: 'The perfect sandwich, mate? Proper simple, that is...'
+[MEMORY STORE] Saved 6 memories to disk
+[VOICE] Spoke chunk in voice channel
+[MEMORY FORMATION] Saved 1 new memories to disk
+[MEMORY FORMATION] Created 1 new memories
+ > Text splitted to sentences.
+['The perfect sandwich, mate?', 'Proper simple, that is.', 'Thick slices of sourdough, nice and crusty on the outside, soft in the middle.', 'Smashed avocado, proper ripe.', 'Then some smoked salmon, the good stuff.', 'Cream cheese, not too much.', 'Add a squeeze of lemon, some fresh dill, and a sprinkle of black pepper.', 'Maybe a few slices of cucumber for crunch.', "Press it down proper firm, so it doesn't fall apart.", "That's the one, boss.", 'Perfect balance of textures and flavors, innit?']
+[AUTO_RESPONSE] on_message triggered for message: The perfect sandwich, mate? Proper simple, that is
+[AUTO_RESPONSE] Successfully sent chunk to Discord
+[AUTO_RESPONSE] Completed message handler successfully
+ > Processing time: 70.31114149093628
+ > Real-time factor: 1.8101201521958594
+[2025-11-18 00:00:26] [INFO    ] discord.player: ffmpeg process 29652 successfully terminated with return code of 0.
+INFO:discord.player:ffmpeg process 29652 successfully terminated with return code of 0.
+[VOICE] Spoke in voice: 'The perfect sandwich, mate? Proper simple, that is...'
+[AUTO_RESPONSE] on_message triggered for message: Back to Chat
+[DEBUG] Interactive mode: False
+[DEBUG] Pending memory context type: <class 'NoneType'>
+[DEBUG] Content: 'Back to Chat' | isdigit: False
+[AUTO_RESPONSE] Checking message triggers for: Back to Chat
+[AUTO_RESPONSE] Entered normal chat block
+[AUTO_RESPONSE] Not in interactive mode, will call API
+[AUTO_RESPONSE] About to call call_aid_api with executor
+
+============================================================
+[CALL #6] Processing: 'Back to Chat...'
+[MEMORY RETRIEVAL] Retrieving relevant memories...
+[MEMORY RETRIEVAL] Found 6 high-quality memories (score >= 0.4)
+[MEMORY 1] Score: 1.10 | AiD is a local AI companion with personality and memory...
+[MEMORY 2] Score: 0.97 | I meant half sorry...
+[MEMORY 3] Score: 0.81 | Let's speed this up proper:
+If we optimize the sublight trav...
+[EMOTION] Detected: neutral (confidence: 0.50, intensity: 0.30)
+[EMOTION] Response mode: energizing
+[EMOTION] Recent trend: neutral - Pretty steady
+[VULNERABILITY] Level: low
+[CONVERSATION] Strategy: brief depth
+
+============================================================
+[MODE] MEMORY
+[BUDGET] Total prompt budget: 28000 tokens
+============================================================
+[NEW MEMORY] Injected 252 tokens of memory context
+[RUNTIME] Buffer size: 209 messages
+[WINDOW] Sliding window tiers (TIME-BASED):
+   |- Recent: 10 messages
+   |- Medium: 0 messages
+   |- Archive: 199 messages
+[TOKENS] Breakdown:
+   |- System: 106
+   |- World Info: 254
+   |- Recent Chat: 1834
+   |- TOTAL: 2135 / 28000
+   ✓ 25865 tokens headroom
+[MAX TOKENS] memory mode - limiting to 300 tokens
+[DEBUG] Raw response length: 130 chars
+[DEBUG] Cleaned response (memory mode): 130 chars
+[DEBUG] After response processing, launching background post-processing
+[DEBUG] Successfully stored in runtime
+[MEMORY FORMATION] Observing interaction...
+[MEMORY FORMATION] No new memories created (reinforcement pending)
+[INFO] Response in 2.51s | Mode: MEMORY
+       [ORCHESTRATOR] Memories used: 0
+       [MEMORY] Runtime: 209 | STM: 200
+       [RELATIONSHIP] Stage: mid | Intimacy: 57/100
+[DEBUG] About to return reply: 130 chars
+[DEBUG] Reply type: <class 'str'>, content preview: Oi, boss. Still here, mate. What's the craic? Fancy talkin' about somethin' in particular? Or just s
+[AUTO_RESPONSE] Received reply from call_aid_api: 130 chars
+[AUTO_RESPONSE] REACHED SEND SECTION - reply variable: <class 'str'> 130 chars
+[AUTO_RESPONSE] Converted reply to text: 130 chars
+[AUTO_RESPONSE] About to send reply to Discord: 130 chars
+[AUTO_RESPONSE] Attempting to send chunk 1: 130 chars
+[VOICE] Queued message for voice: 'Oi, boss. Still here, mate. What's the craic? Fanc...'
+[VOICE] Spoke chunk in voice channel
+ > Text splitted to sentences.
+['Oi, boss.', 'Still here, mate.', "What's the craic?", "Fancy talkin' about somethin' in particular?", 'Or just shoot the breeze?', "I'm all ears."]
+[AUTO_RESPONSE] on_message triggered for message: Oi, boss. Still here, mate. What's the craic? Fanc
+[AUTO_RESPONSE] Successfully sent chunk to Discord
+[AUTO_RESPONSE] Completed message handler successfully
+[AUTO_RESPONSE] on_message triggered for message: Back to the chat
+[VOICE] Queued message for voice: 'Alright boss, heading back to text chat. Catch ya ...'
+[AUTO_RESPONSE] on_message triggered for message: !help
+[AUTO_RESPONSE] on_message triggered for message:
+[AUTO_RESPONSE] on_message triggered for message:
+ > Processing time: 26.563830137252808
+ > Real-time factor: 1.798225680710361
+[VOICE] Spoke in voice: 'Oi, boss. Still here, mate. What's the craic? Fanc...'
+[2025-11-18 00:01:09] [INFO    ] discord.player: ffmpeg process 20520 successfully terminated with return code of 0.
+ > Text splitted to sentences.
+INFO:discord.player:ffmpeg process 20520 successfully terminated with return code of 0.
+['Alright boss, heading back to text chat.', 'Catch ya there!']
+ > Processing time: 8.647445678710938
+ > Real-time factor: 1.7686644517621715
+[2025-11-18 00:01:22] [INFO    ] discord.player: ffmpeg process 20212 successfully terminated with return code of 0.
+INFO:discord.player:ffmpeg process 20212 successfully terminated with return code of 0.
+[VOICE] Spoke in voice: 'Alright boss, heading back to text chat. Catch ya ...'
+[VOICE] Voice worker shutting down
+[VOICE] Voice worker stopped
+[2025-11-18 00:01:23] [INFO    ] discord.voice_state: The voice handshake is being terminated for Channel ID 1417245863184699435 (Guild ID 1417245861573955657)
+INFO:discord.voice_state:The voice handshake is being terminated for Channel ID 1417245863184699435 (Guild ID 1417245861573955657)
+[VOICE] Left voice channel
+[AUTO_RESPONSE] on_message triggered for message: Alright boss, heading back to text chat. Catch ya
+[WARN] Failed to send back-to-chat confirmation: 'NoneType' object has no attribute 'get_random_back_to_chat'
