@@ -15,7 +15,8 @@ python-dotenv>=1.0.0
 transformers>=4.35.0,<5.0.0
 sentence-transformers>=2.3.0
 torch>=2.0.0
-numpy>=1.24.0
+# Note: numpy<2.0 for better compatibility with TTS and older packages
+numpy>=1.24.0,<2.0
 
 # ============================================================
 # VOICE SYSTEM (TTS & STT)
@@ -51,7 +52,8 @@ spacy>=3.7.0
 # ============================================================
 # DATA HANDLING
 # ============================================================
-pandas>=2.0.0
+# Note: pandas<2.0 required by TTS 0.22.0
+pandas>=1.4,<2.0
 python-dateutil>=2.8.2
 
 # ============================================================

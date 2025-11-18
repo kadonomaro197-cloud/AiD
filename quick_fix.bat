@@ -23,12 +23,15 @@ echo [FIX] Upgrading pip...
 python -m pip install --upgrade pip
 
 echo.
-echo [FIX] Fixing transformers and sentence-transformers versions...
-pip uninstall -y transformers sentence-transformers
+echo [FIX] Fixing package version conflicts...
+pip uninstall -y transformers sentence-transformers pandas numpy
 
 echo.
 echo [FIX] Installing compatible versions...
-pip install transformers>=4.35.0 sentence-transformers>=2.3.0
+echo - transformers + sentence-transformers (fixes NLTK_IMPORT_ERROR)
+echo - pandas + numpy (compatible with TTS 0.22.0)
+pip install "transformers>=4.35.0,<5.0.0" "sentence-transformers>=2.3.0"
+pip install "pandas>=1.4,<2.0" "numpy>=1.24.0,<2.0"
 
 if errorlevel 1 (
     echo.
