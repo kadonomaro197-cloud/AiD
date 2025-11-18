@@ -171,6 +171,7 @@ class VoiceHandler:
         try:
             print("[VOICE DEBUG] Attempting to initialize Coqui TTS...")
             from TTS.api import TTS
+            import torch
 
             # Load reference audio samples
             print("[VOICE DEBUG] Loading reference audio from:", self.voice_samples_dir)
@@ -188,11 +189,23 @@ class VoiceHandler:
             # Initialize Coqui TTS with voice cloning model
             # Using XTTS v2 - supports voice cloning with reference audio
             print("[VOICE DEBUG] Loading XTTS v2 model (this may take a moment)...")
-            self.tts_engine = TTS("tts_models/multilingual/multi-dataset/xtts_v2")
+
+            # Determine device (GPU if available, CPU otherwise)
+            if torch.cuda.is_available():
+                device = "cuda"
+                print(f"[VOICE] GPU detected: {torch.cuda.get_device_name(0)}")
+                print(f"[VOICE] GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.2f} GB")
+            else:
+                device = "cpu"
+                print("[VOICE WARNING] No GPU detected, falling back to CPU")
+                print("[VOICE] TTS will be slower on CPU. Consider installing CUDA for GPU acceleration.")
+
+            # Initialize TTS with explicit GPU device
+            self.tts_engine = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
             self.tts_mode = 'coqui'
             self.tts_enabled = True
 
-            print(f"[VOICE] TTS initialized with Coqui TTS (voice cloning)")
+            print(f"[VOICE] TTS initialized with Coqui TTS on {device.upper()} (voice cloning)")
             print(f"[VOICE] Using {len(self.reference_audio)} reference sample(s)")
 
             return True

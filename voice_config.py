@@ -28,21 +28,21 @@ class VoiceConfig:
     # - Medium (0.5-0.7): Balanced (RECOMMENDED)
     # - Higher (0.7-1.0): More expressive but less consistent
     # ACCENT EMPHASIS: Set higher for stronger accent (0.82)
-    TEMPERATURE = 0.98
+    TEMPERATURE = 0.82
 
     # Repetition Penalty: Reduces repetitive patterns
     # - Lower (1.0-2.0): May repeat sounds/words
     # - Medium (2.0-5.0): Balanced (RECOMMENDED)
     # - Higher (5.0-10.0): Avoids repetition aggressively
     # ACCENT EMPHASIS: Set lower to allow accent patterns (1.8)
-    REPETITION_PENALTY = 1.5
+    REPETITION_PENALTY = 1.8
 
     # Length Penalty: Affects speech duration and pacing
     # - Lower (0.5-1.0): Faster, shorter pauses
     # - Default (1.0): Natural pacing
     # - Higher (1.0-2.0): Slower, longer pauses
     # ACCENT EMPHASIS: Slightly higher for deliberate accent (1.2)
-    LENGTH_PENALTY = 1.25
+    LENGTH_PENALTY = 1.2
 
     # ============================================================
     # SAMPLING PARAMETERS
@@ -53,14 +53,14 @@ class VoiceConfig:
     # - Medium (50): Balanced (RECOMMENDED)
     # - Higher (100+): More varied but potentially unclear
     # ACCENT EMPHASIS: Higher for accent pronunciation variety (90)
-    TOP_K = 120
+    TOP_K = 90
 
     # Top-P (Nucleus Sampling): Probability threshold
     # - Lower (0.7-0.85): More focused, clearer
     # - Medium (0.85-0.9): Balanced (RECOMMENDED)
     # - Higher (0.9-1.0): More creative but less stable
     # ACCENT EMPHASIS: Higher for diverse accent patterns (0.94)
-    TOP_P = 0.99
+    TOP_P = 0.94
 
     # ============================================================
     # TEXT PROCESSING
@@ -77,7 +77,7 @@ class VoiceConfig:
     # - 1.1-1.5: Faster, more energetic
     # Note: Not all XTTS versions support this parameter
     # ACCENT EMPHASIS: Slightly slower for clear accent (0.92)
-    SPEED = 0.9
+    SPEED = 0.92
 
     # ============================================================
     # REFERENCE AUDIO SELECTION
