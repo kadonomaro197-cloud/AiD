@@ -12,10 +12,10 @@ python-dotenv>=1.0.0
 # AI/ML MODELS & TRANSFORMERS
 # ============================================================
 # Compatible versions to fix NLTK_IMPORT_ERROR
-# Note: TTS 0.22.0 expects BeamSearchScorer in transformers main namespace
-# but transformers 4.30+ moved it to transformers.generation.beam_search
-# A compatibility patch is applied in voice_handler.py to bridge this gap
-transformers>=4.35.0,<5.0.0
+# Note: TTS 0.22.0 is only compatible with transformers <4.50
+# transformers 4.50+ removed the `generate` method from GPT2InferenceModel
+# which breaks XTTS v2. Must use transformers 4.35-4.45 range.
+transformers>=4.35.0,<4.50.0
 sentence-transformers>=2.3.0
 torch>=2.0.0
 # Note: numpy<2.0 for better compatibility with TTS and older packages
