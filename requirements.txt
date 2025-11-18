@@ -12,6 +12,8 @@ python-dotenv>=1.0.0
 # AI/ML MODELS & TRANSFORMERS
 # ============================================================
 # Compatible versions to fix NLTK_IMPORT_ERROR
+# Note: transformers 4.30+ moved BeamSearchScorer to transformers.generation
+# A compatibility patch is applied in voice_handler.py to support TTS 0.22.0
 transformers>=4.35.0,<5.0.0
 sentence-transformers>=2.3.0
 torch>=2.0.0

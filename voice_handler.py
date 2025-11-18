@@ -10,6 +10,21 @@ Install dependencies:
 pip install TTS pyttsx3 SpeechRecognition pyaudio
 """
 
+# Fix for transformers 4.30+ compatibility with TTS 0.22.0
+# BeamSearchScorer was moved to transformers.generation in newer versions
+try:
+    import transformers
+    if not hasattr(transformers, 'BeamSearchScorer'):
+        try:
+            from transformers.generation import BeamSearchScorer
+            transformers.BeamSearchScorer = BeamSearchScorer
+            print("[VOICE DEBUG] Applied BeamSearchScorer compatibility patch for transformers")
+        except ImportError:
+            # If it's not in generation either, we'll let TTS fail naturally
+            pass
+except ImportError:
+    pass
+
 from typing import Optional
 import os
 from pathlib import Path
@@ -74,9 +89,11 @@ class VoiceHandler:
     def _init_coqui_tts(self) -> bool:
         """Initialize Coqui TTS with voice cloning."""
         try:
+            print("[VOICE DEBUG] Attempting to initialize Coqui TTS...")
             from TTS.api import TTS
 
             # Load reference audio samples
+            print("[VOICE DEBUG] Loading reference audio from:", self.voice_samples_dir)
             self.reference_audio = self._load_reference_audio()
 
             if not self.reference_audio:
@@ -84,8 +101,13 @@ class VoiceHandler:
                 print("[VOICE] See VOICE_CLONING_GUIDE.md for setup instructions")
                 return False
 
+            print(f"[VOICE DEBUG] Found {len(self.reference_audio)} reference samples:")
+            for i, ref in enumerate(self.reference_audio):
+                print(f"[VOICE DEBUG]   [{i}] {ref}")
+
             # Initialize Coqui TTS with voice cloning model
             # Using XTTS v2 - supports voice cloning with reference audio
+            print("[VOICE DEBUG] Loading XTTS v2 model (this may take a moment)...")
             self.tts_engine = TTS("tts_models/multilingual/multi-dataset/xtts_v2")
             self.tts_mode = 'coqui'
             self.tts_enabled = True
@@ -95,11 +117,14 @@ class VoiceHandler:
 
             return True
 
-        except ImportError:
+        except ImportError as e:
+            print(f"[VOICE ERROR] Failed to import TTS: {e}")
             print("[VOICE] Coqui TTS not available (install TTS)")
             return False
         except Exception as e:
-            print(f"[VOICE] Coqui TTS initialization error: {e}")
+            print(f"[VOICE ERROR] Failed to load XTTS v2 model: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def _load_reference_audio(self) -> Optional[list]:
