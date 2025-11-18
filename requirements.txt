@@ -18,6 +18,12 @@ torch>=2.0.0
 # Note: numpy<2.0 for better compatibility with TTS and older packages
 numpy>=1.24.0,<2.0
 
+# HuggingFace dependencies - explicit versions to prevent import errors
+# accelerate is required by transformers for generation utilities
+accelerate>=0.20.0,<1.0.0
+# huggingface_hub>=0.17.0 required for split_torch_state_dict_into_shards
+huggingface_hub>=0.17.0,<1.0.0
+
 # ============================================================
 # VOICE SYSTEM (TTS & STT)
 # ============================================================
