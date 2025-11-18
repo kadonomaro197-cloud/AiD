@@ -98,6 +98,10 @@ def add_to_runtime(role: str, content: str, emotion: str = "neutral"):
         print(f"[MEMORY] Message too large ({token_estimate} tokens), skipping runtime")
         return
 
+    # Track whether we need to trigger a save (check while holding lock, trigger after releasing)
+    should_save = False
+    should_cleanup = False
+
     with _runtime_lock:
         entry = {
             "role": role,
@@ -107,15 +111,23 @@ def add_to_runtime(role: str, content: str, emotion: str = "neutral"):
         }
         _runtime_conversation.append(entry)
 
-        # Increment message counter and trigger save every MESSAGE_SAVE_INTERVAL messages
+        # Increment message counter and check if we need to save
         _message_counter += 1
         if _message_counter >= MESSAGE_SAVE_INTERVAL:
-            _trigger_auto_save()
+            should_save = True
             _message_counter = 0
 
-        # PERIODIC CLEANUP - Every 100 messages
+        # Check if we need periodic cleanup
         if len(_runtime_conversation) % 100 == 0:
-            periodic_runtime_cleanup()
+            should_cleanup = True
+
+    # CRITICAL: Trigger save OUTSIDE the lock to avoid deadlock
+    if should_save:
+        _trigger_auto_save()
+
+    # CRITICAL: Trigger cleanup OUTSIDE the lock to avoid deadlock
+    if should_cleanup:
+        periodic_runtime_cleanup()
 
 def periodic_runtime_cleanup():
     """Periodically clean runtime buffer - call this every 100 messages."""
