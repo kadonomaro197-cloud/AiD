@@ -109,6 +109,7 @@ class VoiceHandler:
     """
     Manages voice input/output for AiD.
     Supports voice cloning via Coqui TTS with reference audio.
+    Uses async queue for non-blocking voice generation.
     """
 
     def __init__(self):
@@ -124,6 +125,11 @@ class VoiceHandler:
         self.voice_client = None
         self.is_in_voice = False
         self.current_voice_channel = None
+
+        # Async voice queue - allows parallel processing
+        self.voice_queue = None  # Will be initialized in async context
+        self.voice_worker_task = None
+        self._processing_voice = False
 
         self._init_tts()
         self._init_stt()
@@ -425,6 +431,115 @@ class VoiceHandler:
         }
 
     # =======================
+    # ASYNC VOICE QUEUE SYSTEM
+    # =======================
+
+    async def start_voice_worker(self):
+        """Start the background voice processing worker."""
+        import asyncio
+
+        if self.voice_queue is None:
+            self.voice_queue = asyncio.Queue()
+            print("[VOICE] Initialized voice queue")
+
+        if self.voice_worker_task is None or self.voice_worker_task.done():
+            self.voice_worker_task = asyncio.create_task(self._voice_worker())
+            print("[VOICE] Started background voice worker")
+
+    async def _voice_worker(self):
+        """Background worker that processes voice queue without blocking."""
+        import asyncio
+        import tempfile
+        import discord
+
+        print("[VOICE] Voice worker running in background")
+
+        while True:
+            try:
+                # Get next text to speak from queue (non-blocking for other operations)
+                text = await self.voice_queue.get()
+
+                if text is None:  # Shutdown signal
+                    print("[VOICE] Voice worker shutting down")
+                    break
+
+                if not self.voice_client or not self.voice_client.is_connected():
+                    print("[VOICE] Not in voice channel, skipping queued message")
+                    self.voice_queue.task_done()
+                    continue
+
+                if not self.tts_enabled:
+                    print("[VOICE] TTS not enabled, skipping")
+                    self.voice_queue.task_done()
+                    continue
+
+                # Clean text for speech
+                clean_text = self._clean_for_speech(text)
+
+                # Generate speech in thread pool (doesn't block event loop)
+                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                    temp_path = temp_file.name
+
+                if self.tts_mode == 'coqui':
+                    from functools import partial
+                    loop = asyncio.get_event_loop()
+                    success = await loop.run_in_executor(
+                        None,
+                        partial(self._speak_coqui, clean_text, output_file=temp_path, play_audio=False)
+                    )
+
+                    if success:
+                        # Play the audio
+                        if self.voice_client.is_playing():
+                            self.voice_client.stop()
+
+                        audio_source = discord.FFmpegPCMAudio(temp_path)
+                        self.voice_client.play(audio_source)
+
+                        # Wait for playback to finish
+                        while self.voice_client.is_playing():
+                            await asyncio.sleep(0.1)
+
+                        print(f"[VOICE] Spoke in voice: '{clean_text[:50]}...'")
+
+                    # Clean up
+                    try:
+                        import os
+                        os.remove(temp_path)
+                    except:
+                        pass
+
+                self.voice_queue.task_done()
+
+            except Exception as e:
+                print(f"[VOICE] Error in voice worker: {e}")
+                import traceback
+                traceback.print_exc()
+                await asyncio.sleep(1)  # Prevent tight error loop
+
+    async def queue_voice_message(self, text: str):
+        """
+        Queue a message for voice output (non-blocking).
+        This allows the bot to continue processing while voice generates.
+        """
+        if self.voice_queue is None:
+            await self.start_voice_worker()
+
+        await self.voice_queue.put(text)
+        print(f"[VOICE] Queued message for voice: '{text[:50]}...'")
+
+    async def stop_voice_worker(self):
+        """Stop the background voice worker."""
+        if self.voice_queue:
+            await self.voice_queue.put(None)  # Shutdown signal
+
+        if self.voice_worker_task:
+            await self.voice_worker_task
+            self.voice_worker_task = None
+
+        print("[VOICE] Voice worker stopped")
+
+    # =======================
     # DISCORD VOICE CHANNEL INTEGRATION
     # =======================
 
@@ -458,6 +573,10 @@ class VoiceHandler:
             self.is_in_voice = True
             self.current_voice_channel = voice_channel
             print(f"[VOICE] Joined voice channel: {voice_channel.name}")
+
+            # Start the background voice worker
+            await self.start_voice_worker()
+
             return True
 
         except Exception as e:
@@ -473,6 +592,9 @@ class VoiceHandler:
             bool: True if successfully left, False otherwise
         """
         try:
+            # Stop the voice worker first
+            await self.stop_voice_worker()
+
             if self.voice_client and self.voice_client.is_connected():
                 await self.voice_client.disconnect()
                 print("[VOICE] Left voice channel")
@@ -489,7 +611,8 @@ class VoiceHandler:
     async def speak_in_voice(self, text: str, emotion: Optional[str] = None,
                             intensity: float = 0.5) -> bool:
         """
-        Speak in Discord voice channel with emotion-aware voice parameters.
+        Queue message for voice output (non-blocking).
+        The background worker will generate and play the audio.
 
         Args:
             text: Text to speak
@@ -497,13 +620,9 @@ class VoiceHandler:
             intensity: Emotion intensity (0.0 to 1.0)
 
         Returns:
-            bool: True if successfully spoke, False otherwise
+            bool: True if message queued successfully, False otherwise
         """
         try:
-            import discord
-            import asyncio
-            import tempfile
-
             if not self.voice_client or not self.voice_client.is_connected():
                 print("[VOICE] Not in a voice channel")
                 return False
@@ -511,9 +630,6 @@ class VoiceHandler:
             if not self.tts_enabled:
                 print("[VOICE] TTS not enabled")
                 return False
-
-            # Clean text for speech
-            clean_text = self._clean_for_speech(text)
 
             # Apply emotion-based voice parameters if emotion provided
             if emotion:
@@ -524,55 +640,12 @@ class VoiceHandler:
                 except ImportError:
                     print("[VOICE] Emotion voice mapper not available, using default parameters")
 
-            # Generate speech to a temporary file
-            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
-                temp_path = temp_file.name
-
-            # Generate the audio (don't play it locally, we'll stream to Discord)
-            # Run TTS in thread pool to avoid blocking the event loop (takes 12-14s)
-            if self.tts_mode == 'coqui':
-                print("[VOICE DEBUG] Running TTS generation in thread pool to avoid blocking...")
-                from functools import partial
-                loop = asyncio.get_event_loop()
-                success = await loop.run_in_executor(
-                    None,  # Use default executor
-                    partial(self._speak_coqui, clean_text, output_file=temp_path, play_audio=False)
-                )
-            else:
-                # pyttsx3 can't easily save to file, so we'll skip voice for fallback
-                print("[VOICE] pyttsx3 doesn't support Discord voice streaming")
-                return False
-
-            if not success:
-                print("[VOICE] Failed to generate speech")
-                return False
-
-            # Play the audio in Discord voice channel
-            if self.voice_client.is_playing():
-                self.voice_client.stop()
-
-            audio_source = discord.FFmpegPCMAudio(temp_path)
-            self.voice_client.play(audio_source)
-
-            # Wait for playback to finish
-            while self.voice_client.is_playing():
-                await asyncio.sleep(0.1)
-
-            # Clean up temp file
-            try:
-                os.remove(temp_path)
-            except:
-                pass
-
-            print(f"[VOICE] Spoke in voice channel: '{clean_text[:50]}...'")
+            # Queue the message for background processing (non-blocking!)
+            await self.queue_voice_message(text)
             return True
 
-        except ImportError as e:
-            print(f"[VOICE] Missing dependency for Discord voice: {e}")
-            print("[VOICE] Install: pip install discord.py[voice] ffmpeg-python")
-            return False
         except Exception as e:
-            print(f"[VOICE] Error speaking in voice channel: {e}")
+            print(f"[VOICE] Error queuing voice message: {e}")
             import traceback
             traceback.print_exc()
             return False
