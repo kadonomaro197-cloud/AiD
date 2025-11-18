@@ -1,0 +1,32 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TTS generated samples
+accent_samples/
+*.wav
+
+# Temporary files
+*.tmp
+*.log
+
+# Environment variables
+.env
+credentials.json
