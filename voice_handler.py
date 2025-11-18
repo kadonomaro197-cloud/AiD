@@ -12,18 +12,73 @@ pip install TTS pyttsx3 SpeechRecognition pyaudio
 
 # Fix for transformers 4.30+ compatibility with TTS 0.22.0
 # BeamSearchScorer was moved to transformers.generation in newer versions
-try:
-    import transformers
-    if not hasattr(transformers, 'BeamSearchScorer'):
+# We need to patch it BEFORE TTS tries to import it
+def _patch_transformers_compatibility():
+    """
+    Patch transformers to make BeamSearchScorer available in main namespace.
+    This fixes compatibility between TTS 0.22.0 and transformers 4.30+
+    """
+    try:
+        import sys
+        import transformers
+
+        print("[VOICE DEBUG] Checking transformers compatibility...")
+
+        # Check if BeamSearchScorer is already available
+        try:
+            from transformers import BeamSearchScorer
+            print("[VOICE DEBUG] BeamSearchScorer already available in transformers")
+            return True
+        except ImportError:
+            print("[VOICE DEBUG] BeamSearchScorer not in main transformers namespace, applying patch...")
+
+        # Not available, need to apply patch
         try:
             from transformers.generation import BeamSearchScorer
+            print(f"[VOICE DEBUG] Successfully imported BeamSearchScorer from transformers.generation")
+
+            # Patch it into the transformers module's namespace
+            # Multiple strategies to ensure it's accessible
+
+            # Strategy 1: Direct attribute assignment
             transformers.BeamSearchScorer = BeamSearchScorer
-            print("[VOICE DEBUG] Applied BeamSearchScorer compatibility patch for transformers")
-        except ImportError:
-            # If it's not in generation either, we'll let TTS fail naturally
-            pass
-except ImportError:
-    pass
+
+            # Strategy 2: Add to module's __dict__
+            transformers.__dict__['BeamSearchScorer'] = BeamSearchScorer
+
+            # Strategy 3: Update sys.modules entry
+            sys.modules['transformers'].BeamSearchScorer = BeamSearchScorer
+
+            # Verify the patch worked
+            try:
+                from transformers import BeamSearchScorer as Test
+                print("[VOICE DEBUG] ✓ BeamSearchScorer compatibility patch verified and working!")
+                return True
+            except ImportError:
+                print("[VOICE DEBUG] ✗ Patch applied but verification failed")
+                return False
+
+        except ImportError as e:
+            print(f"[VOICE DEBUG] ✗ Could not import BeamSearchScorer from transformers.generation: {e}")
+            print(f"[VOICE DEBUG] transformers version: {transformers.__version__}")
+            return False
+        except Exception as e:
+            print(f"[VOICE DEBUG] ✗ Unexpected error during patch: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    except ImportError as e:
+        print(f"[VOICE DEBUG] transformers not installed: {e}")
+        return False
+    except Exception as e:
+        print(f"[VOICE DEBUG] ✗ Unexpected error in compatibility check: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+# Apply the patch when module is imported
+_patch_success = _patch_transformers_compatibility()
 
 from typing import Optional
 import os
