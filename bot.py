@@ -887,14 +887,26 @@ Previous response was TOO LONG. Keep under 300 words this time.
         except Exception as e:
             print(f"[RELATIONSHIP] Warning: {e}")
 
-    # Launch post-processing in background thread
-    print("[DEBUG] After response processing, launching background post-processing")
-    import threading
-    post_process_thread = threading.Thread(target=post_process_response, daemon=True)
-    post_process_thread.start()
-
     end_time = time.time()
-    
+
+    # === GATHER ALL STATS BEFORE BACKGROUND THREAD (to avoid deadlock) ===
+    runtime_size = None
+    stm_size = None
+    relationship_stage = "unknown"
+    intimacy_score = 0.0
+
+    try:
+        runtime_size = memory.get_runtime_size()
+        stm_size = len(mem_stm.get_all())
+    except Exception as e:
+        print(f"[WARN] Could not get memory stats: {e}")
+
+    try:
+        relationship_stage = relationship.get_current_stage()
+        intimacy_score = relationship.get_intimacy_score()
+    except Exception as e:
+        print(f"[WARN] Could not get relationship stats: {e}")
+
     # === DEBUG LOGGING ===
     debug_entry = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -904,8 +916,8 @@ Previous response was TOO LONG. Keep under 300 words this time.
         "orchestrator_memories": len(orchestrator_memories),
         "mode_reset_detected": bool(mode_reset),
         "verbose_mode": conversation_state.get("verbose_mode", False),
-        "relationship_stage": relationship.get_current_stage(),
-        "intimacy_score": round(relationship.get_intimacy_score(), 1),
+        "relationship_stage": relationship_stage,
+        "intimacy_score": round(intimacy_score, 1),
         "emotional_state": emotional_context.get('current_emotion', {}).get('primary', {}).get('emotion', 'unknown'),
         "response_mode": emotional_context.get('response_mode', 'default'),
         "conversation_depth": conversation_strategy.get('depth_preference', 'moderate'),
@@ -913,6 +925,12 @@ Previous response was TOO LONG. Keep under 300 words this time.
         "response_time_seconds": round(end_time - start_time, 2),
         "response_preview": reply[:300]
     }
+
+    # Launch post-processing in background thread AFTER gathering stats
+    print("[DEBUG] After response processing, launching background post-processing")
+    import threading
+    post_process_thread = threading.Thread(target=post_process_response, daemon=True)
+    post_process_thread.start()
     
     if ADVANCED_INTELLIGENCE_LOADED:
         debug_entry["advanced_systems"] = {
@@ -936,7 +954,7 @@ Previous response was TOO LONG. Keep under 300 words this time.
     except Exception as e:
         print(f"[WARN] Failed to save debug log: {e}")
 
-    # Console output - each print wrapped individually for safety
+    # Console output - uses pre-gathered stats to avoid deadlock
     try:
         print(f"[INFO] Response in {end_time - start_time:.2f}s | Mode: {mode.upper()}")
     except: pass
@@ -946,18 +964,14 @@ Previous response was TOO LONG. Keep under 300 words this time.
     except: pass
 
     try:
-        runtime_size = memory.get_runtime_size()
-        stm_size = len(mem_stm.get_all())
-        print(f"       [MEMORY] Runtime: {runtime_size} | STM: {stm_size}")
-    except Exception as e:
-        print(f"       [MEMORY] Error getting memory stats: {e}")
+        if runtime_size is not None and stm_size is not None:
+            print(f"       [MEMORY] Runtime: {runtime_size} | STM: {stm_size}")
+    except: pass
 
     try:
-        stage = relationship.get_current_stage()
-        intimacy = relationship.get_intimacy_score()
-        print(f"       [RELATIONSHIP] Stage: {stage} | Intimacy: {intimacy:.0f}/100")
-    except Exception as e:
-        print(f"       [RELATIONSHIP] Error getting relationship stats: {e}")
+        if relationship_stage != "unknown":
+            print(f"       [RELATIONSHIP] Stage: {relationship_stage} | Intimacy: {intimacy_score:.0f}/100")
+    except: pass
 
     print(f"[DEBUG] About to return reply: {len(reply)} chars")
     print(f"[DEBUG] Reply type: {type(reply)}, content preview: {reply[:100] if reply else 'None'}")
