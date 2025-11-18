@@ -433,9 +433,16 @@ class VoiceHandler:
             if self.tts_mode == 'coqui':
                 success = self._speak_coqui(clean_text, output_file=temp_path, play_audio=False)
             else:
-                # pyttsx3 can't easily save to file, so we'll skip voice for fallback
-                print("[VOICE] pyttsx3 doesn't support Discord voice streaming")
-                return False
+                # Try to use pyttsx3 to save to file
+                try:
+                    self.tts_engine.save_to_file(clean_text, temp_path)
+                    self.tts_engine.runAndWait()
+                    success = True
+                    print("[VOICE] Generated audio with pyttsx3 fallback")
+                except Exception as e:
+                    print(f"[VOICE] pyttsx3 file generation failed: {e}")
+                    print("[VOICE] For better Discord voice support, install Coqui TTS: pip install TTS")
+                    return False
 
             if not success:
                 print("[VOICE] Failed to generate speech")
@@ -445,12 +452,24 @@ class VoiceHandler:
             if self.voice_client.is_playing():
                 self.voice_client.stop()
 
-            audio_source = discord.FFmpegPCMAudio(temp_path)
-            self.voice_client.play(audio_source)
+            try:
+                audio_source = discord.FFmpegPCMAudio(temp_path)
+                self.voice_client.play(audio_source)
 
-            # Wait for playback to finish
-            while self.voice_client.is_playing():
-                await asyncio.sleep(0.1)
+                # Wait for playback to finish
+                while self.voice_client.is_playing():
+                    await asyncio.sleep(0.1)
+
+                print(f"[VOICE] Spoke in voice channel: '{clean_text[:50]}...'")
+            except Exception as ffmpeg_error:
+                print(f"[VOICE] FFmpeg error: {ffmpeg_error}")
+                print("[VOICE] Make sure FFmpeg is installed: https://ffmpeg.org/download.html")
+                # Clean up and return False
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass
+                return False
 
             # Clean up temp file
             try:
@@ -458,7 +477,6 @@ class VoiceHandler:
             except:
                 pass
 
-            print(f"[VOICE] Spoke in voice channel: '{clean_text[:50]}...'")
             return True
 
         except ImportError as e:
@@ -506,7 +524,7 @@ def get_voice() -> VoiceHandler:
         _voice = VoiceHandler()
     return _voice
 
-def init_voice():
+def init_voice(bot=None):
     """Initialize voice handler."""
     get_voice()
     print("[VOICE] Voice handler initialized")
