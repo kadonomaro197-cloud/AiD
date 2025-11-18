@@ -658,11 +658,19 @@ def register_handlers(bot, call_aid_api_override=None):
 
                     # Pass memory in correct parameter position (3rd)
                     print(f"[AUTO_RESPONSE] About to call call_aid_api...")
-                    reply = await loop.run_in_executor(executor, call_aid_api_local, content_to_send, rag_context_text, memory_context_text)
-                    print(f"[AUTO_RESPONSE] Received reply from call_aid_api: {len(reply) if reply else 0} chars")
-                    print(f"[AUTO_RESPONSE] Reply type: {type(reply)}, content preview: {str(reply)[:100]}")
+                    try:
+                        reply = await loop.run_in_executor(executor, call_aid_api_local, content_to_send, rag_context_text, memory_context_text)
+                        print(f"[AUTO_RESPONSE] Executor returned! Reply: {len(reply) if reply else 0} chars")
+                        print(f"[AUTO_RESPONSE] Reply type: {type(reply)}, content preview: {str(reply)[:100]}")
+                    except Exception as exec_error:
+                        print(f"[AUTO_RESPONSE] ERROR in executor: {exec_error}")
+                        traceback.print_exc()
+                        reply = f"Sorry boss, had a technical hiccup: {exec_error}"
+
+                    print(f"[AUTO_RESPONSE] Past executor block, reply is: {type(reply) if reply else 'None'}")
 
             # Send section - only run if reply was set
+            print(f"[AUTO_RESPONSE] At send section check, reply is: {type(reply) if reply else 'None'}")
             if reply is None:
                 print(f"[AUTO_RESPONSE] No reply generated - skipping send")
                 return
