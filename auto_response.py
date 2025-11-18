@@ -669,56 +669,56 @@ def register_handlers(bot, call_aid_api_override=None):
 
                     print(f"[AUTO_RESPONSE] Past executor block, reply is: {type(reply) if reply else 'None'}")
 
-            # Send section - only run if reply was set
-            print(f"[AUTO_RESPONSE] At send section check, reply is: {type(reply) if reply else 'None'}")
-            if reply is None:
-                print(f"[AUTO_RESPONSE] No reply generated - skipping send")
-                return
+                    # Send section - only run if reply was set
+                    print(f"[AUTO_RESPONSE] At send section check, reply is: {type(reply) if reply else 'None'}")
+                    if reply is None:
+                        print(f"[AUTO_RESPONSE] No reply generated - skipping send")
+                        return
 
-            print(f"[AUTO_RESPONSE] REACHED SEND SECTION - reply length: {len(str(reply))} chars")
+                    print(f"[AUTO_RESPONSE] REACHED SEND SECTION - reply length: {len(str(reply))} chars")
 
-            # --- Send reply strictly in 2000-char chunks ---
-            reply_text = reply if isinstance(reply, str) else str(reply)
-            print(f"[AUTO_RESPONSE] Converted reply to text: {len(reply_text)} chars")
-            
-            if not reply_text.strip():
-                reply_text = "⚠️ AID generated a response, but it was empty. Check logs."
-            
-            print(f"[AUTO_RESPONSE] About to send reply to Discord: {len(reply_text)} chars")
+                    # --- Send reply strictly in 2000-char chunks ---
+                    reply_text = reply if isinstance(reply, str) else str(reply)
+                    print(f"[AUTO_RESPONSE] Converted reply to text: {len(reply_text)} chars")
 
-            max_len = 2000
+                    if not reply_text.strip():
+                        reply_text = "⚠️ AID generated a response, but it was empty. Check logs."
 
-            # --- DUAL OUTPUT: Voice + Text ---
-            # Check if voice mode is active
-            try:
-                import voice_handler
-                voice_mgr = voice_handler.get_voice()
-                voice_active = voice_mgr and voice_mgr.is_in_voice
-            except Exception:
-                voice_active = False
+                    print(f"[AUTO_RESPONSE] About to send reply to Discord: {len(reply_text)} chars")
 
-            for i in range(0, len(reply_text), max_len):
-                chunk = reply_text[i:i + max_len]
-                print(f"[AUTO_RESPONSE] Attempting to send chunk {i//2000 + 1}: {len(chunk)} chars")
+                    max_len = 2000
 
-                try:
-                    # If in voice mode, speak the chunk
-                    if voice_active:
+                    # --- DUAL OUTPUT: Voice + Text ---
+                    # Check if voice mode is active
+                    try:
+                        import voice_handler
+                        voice_mgr = voice_handler.get_voice()
+                        voice_active = voice_mgr and voice_mgr.is_in_voice
+                    except Exception:
+                        voice_active = False
+
+                    for i in range(0, len(reply_text), max_len):
+                        chunk = reply_text[i:i + max_len]
+                        print(f"[AUTO_RESPONSE] Attempting to send chunk {i//2000 + 1}: {len(chunk)} chars")
+
                         try:
-                            await voice_mgr.speak_in_voice(chunk)
-                            print(f"[VOICE] Spoke chunk in voice channel")
-                        except Exception as voice_e:
-                            print(f"[VOICE] Error speaking chunk: {voice_e}")
+                            # If in voice mode, speak the chunk
+                            if voice_active:
+                                try:
+                                    await voice_mgr.speak_in_voice(chunk)
+                                    print(f"[VOICE] Spoke chunk in voice channel")
+                                except Exception as voice_e:
+                                    print(f"[VOICE] Error speaking chunk: {voice_e}")
 
-                    # Always send to text chat (for reference)
-                    await message.channel.send(chunk)
-                    print(f"[AUTO_RESPONSE] Successfully sent chunk to Discord")
+                            # Always send to text chat (for reference)
+                            await message.channel.send(chunk)
+                            print(f"[AUTO_RESPONSE] Successfully sent chunk to Discord")
 
-                except Exception as send_e:
-                    print(f"[ERROR] Failed to send message chunk to Discord: {send_e}")
-                    traceback.print_exc()
+                        except Exception as send_e:
+                            print(f"[ERROR] Failed to send message chunk to Discord: {send_e}")
+                            traceback.print_exc()
 
-            print(f"[AUTO_RESPONSE] Completed message handler successfully")
+                    print(f"[AUTO_RESPONSE] Completed message handler successfully")
         except Exception as e:
             print(f"[ERROR] on_message handling failed: {e}")
             traceback.print_exc()
