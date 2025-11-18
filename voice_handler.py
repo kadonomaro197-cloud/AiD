@@ -529,8 +529,15 @@ class VoiceHandler:
                 temp_path = temp_file.name
 
             # Generate the audio (don't play it locally, we'll stream to Discord)
+            # Run TTS in thread pool to avoid blocking the event loop (takes 12-14s)
             if self.tts_mode == 'coqui':
-                success = self._speak_coqui(clean_text, output_file=temp_path, play_audio=False)
+                print("[VOICE DEBUG] Running TTS generation in thread pool to avoid blocking...")
+                from functools import partial
+                loop = asyncio.get_event_loop()
+                success = await loop.run_in_executor(
+                    None,  # Use default executor
+                    partial(self._speak_coqui, clean_text, output_file=temp_path, play_audio=False)
+                )
             else:
                 # pyttsx3 can't easily save to file, so we'll skip voice for fallback
                 print("[VOICE] pyttsx3 doesn't support Discord voice streaming")
