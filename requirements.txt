@@ -1,13 +1,72 @@
-# Core ML Dependencies
-sentence-transformers==2.7.0
-transformers==4.34.0
+# AiD Discord Bot - Complete Dependencies
+# Install with: pip install -r requirements.txt
 
-# Vector Store
-faiss-cpu>=1.7.4
-numpy>=1.24.0,<2.0.0
+# ============================================================
+# CORE DISCORD BOT
+# ============================================================
+discord.py[voice]>=2.3.0
+requests>=2.31.0
+python-dotenv>=1.0.0
 
-# Discord Bot
-discord.py>=2.0.0
+# ============================================================
+# AI/ML MODELS & TRANSFORMERS
+# ============================================================
+# Compatible versions to fix NLTK_IMPORT_ERROR
+transformers>=4.35.0,<5.0.0
+sentence-transformers>=2.3.0
+torch>=2.0.0
+# Note: numpy<2.0 for better compatibility with TTS and older packages
+numpy>=1.24.0,<2.0
 
-# Utilities
-python-dotenv>=0.19.0
+# ============================================================
+# VOICE SYSTEM (TTS & STT)
+# ============================================================
+# Coqui TTS for voice cloning
+TTS>=0.22.0
+
+# Speech Recognition
+SpeechRecognition>=3.10.0
+pyaudio>=0.2.13  # May require system-level dependencies
+
+# Audio playback and processing
+sounddevice>=0.4.6
+soundfile>=0.12.1
+pydub>=0.25.1
+
+# Discord voice dependencies
+PyNaCl>=1.5.0
+ffmpeg-python>=0.2.0  # Python wrapper (still need ffmpeg binary)
+
+# ============================================================
+# MEMORY & EMBEDDINGS SYSTEM
+# ============================================================
+faiss-cpu>=1.7.4  # or faiss-gpu if you have CUDA
+scikit-learn>=1.3.0
+
+# ============================================================
+# NATURAL LANGUAGE PROCESSING
+# ============================================================
+nltk>=3.8.1
+spacy>=3.7.0
+
+# ============================================================
+# DATA HANDLING
+# ============================================================
+# Note: pandas<2.0 required by TTS 0.22.0
+pandas>=1.4,<2.0
+python-dateutil>=2.8.2
+
+# ============================================================
+# UTILITIES
+# ============================================================
+colorama>=0.4.6  # For colored terminal output
+tqdm>=4.66.0  # Progress bars
+pyyaml>=6.0.1  # YAML configuration files
+
+# ============================================================
+# OPTIONAL: Development Tools
+# ============================================================
+# Uncomment if you want development tools
+# pytest>=7.4.0
+# black>=23.0.0
+# flake8>=6.1.0
