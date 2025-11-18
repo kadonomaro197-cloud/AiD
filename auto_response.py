@@ -247,8 +247,13 @@ def register_handlers(bot, call_aid_api_override=None):
                         if success:
                             # Confirm in both voice and text
                             response = "Alright boss, I'm in the voice channel now! You can talk to me or text me, innit?"
-                            await voice_mgr.speak_in_voice(response)
-                            await message.channel.send(response)
+                            voice_success = await voice_mgr.speak_in_voice(response)
+                            if not voice_success:
+                                # Voice failed, notify user
+                                warning = "⚠️ I'm in the voice channel, but I can't speak! Coqui TTS is not installed. Install it with: `pip install TTS`"
+                                await message.channel.send(warning)
+                            else:
+                                await message.channel.send(response)
                         # Error messages already sent by join_voice_channel
                     else:
                         await message.channel.send("Voice handler ain't ready yet, mate. Check the logs.")
@@ -695,10 +700,15 @@ def register_handlers(bot, call_aid_api_override=None):
                     # If in voice mode, speak the chunk
                     if voice_active:
                         try:
-                            await voice_mgr.speak_in_voice(chunk)
-                            print(f"[VOICE] Spoke chunk in voice channel")
+                            voice_success = await voice_mgr.speak_in_voice(chunk)
+                            if voice_success:
+                                print(f"[VOICE] Spoke chunk in voice channel")
+                            else:
+                                print(f"[VOICE] Failed to speak chunk (TTS may not be configured)")
                         except Exception as voice_e:
                             print(f"[VOICE] Error speaking chunk: {voice_e}")
+                            import traceback
+                            traceback.print_exc()
 
                     # Always send to text chat (for reference)
                     await message.channel.send(chunk)

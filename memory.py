@@ -188,17 +188,19 @@ def _auto_save_loop():
         if not _auto_save_running:
             break
         try:
-            # Inline save logic to avoid scoping issues
+            # Copy data while holding lock, then release BEFORE disk I/O
             with _runtime_lock:
                 # UPGRADED: Save last 200 messages instead of 50
                 messages_to_save = _runtime_conversation[-200:] if len(_runtime_conversation) > 200 else _runtime_conversation
-                
-                import memory_management.stm as mem_stm_module
-                mem_stm_module._stm_data = list(messages_to_save)
-                mem_stm.save_stm(log=False)
-                
-                saved_count = len(messages_to_save)
-            
+                # Make a deep copy to avoid holding lock during I/O
+                messages_copy = list(messages_to_save)
+                saved_count = len(messages_copy)
+
+            # Disk I/O happens OUTSIDE the lock to avoid blocking other operations
+            import memory_management.stm as mem_stm_module
+            mem_stm_module._stm_data = messages_copy
+            mem_stm.save_stm(log=False)
+
             print(f"[MEMORY] [AUTO-SAVE] Saved {saved_count} messages to STM")
         except Exception as e:
             print(f"[MEMORY] [AUTO-SAVE] Failed: {e}")

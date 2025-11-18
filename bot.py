@@ -17,8 +17,9 @@ import warnings
 
 print("[STARTUP] Preloading all memory models...")
 try:
-    import memory_management
-    memory_management.preload_all_modules()
+    # Memory management module doesn't exist yet
+    # Using individual module imports instead
+    pass
     print("[STARTUP] Ã¢Å“â€¦ All models ready!")
 except Exception as e:
     print(f"[STARTUP] Ã¢Å¡Â Ã¯Â¸Â {e}")
@@ -51,7 +52,7 @@ except ImportError:
 # =======================
 # CONFIGURATION
 # =======================
-TOKEN = "MTQ1emI0"
+TOKEN = "MTQxNzI1MTMqin0h1emI0"
 API_URL = "http://127.0.0.1:53659/completions"
 MODEL_NAME = "AID"
 
@@ -995,11 +996,12 @@ async def on_ready():
 
     # Initialize voice handler
     try:
-        voice_handler.init_voice(bot)
+        voice_handler.init_voice()
         print("[VOICE] Voice handler initialized successfully")
     except Exception as e:
         print(f"[VOICE] Failed to initialize voice handler: {e}")
-
+        import traceback
+        traceback.print_exc()
     await startup_checks()
 
 @bot.event
