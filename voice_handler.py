@@ -33,34 +33,53 @@ def _patch_transformers_compatibility():
             print("[VOICE DEBUG] BeamSearchScorer not in main transformers namespace, applying patch...")
 
         # Not available, need to apply patch
-        try:
-            from transformers.generation import BeamSearchScorer
-            print(f"[VOICE DEBUG] Successfully imported BeamSearchScorer from transformers.generation")
+        # Try multiple possible locations (varies by transformers version)
+        BeamSearchScorer = None
+        import_locations = [
+            'transformers.generation.beam_search',  # transformers 4.30+
+            'transformers.generation',              # transformers 4.20-4.29
+            'transformers.generation_utils',        # older versions
+        ]
 
-            # Patch it into the transformers module's namespace
-            # Multiple strategies to ensure it's accessible
-
-            # Strategy 1: Direct attribute assignment
-            transformers.BeamSearchScorer = BeamSearchScorer
-
-            # Strategy 2: Add to module's __dict__
-            transformers.__dict__['BeamSearchScorer'] = BeamSearchScorer
-
-            # Strategy 3: Update sys.modules entry
-            sys.modules['transformers'].BeamSearchScorer = BeamSearchScorer
-
-            # Verify the patch worked
+        for location in import_locations:
             try:
-                from transformers import BeamSearchScorer as Test
-                print("[VOICE DEBUG] ✓ BeamSearchScorer compatibility patch verified and working!")
-                return True
-            except ImportError:
-                print("[VOICE DEBUG] ✗ Patch applied but verification failed")
-                return False
+                if location == 'transformers.generation.beam_search':
+                    from transformers.generation.beam_search import BeamSearchScorer
+                elif location == 'transformers.generation':
+                    from transformers.generation import BeamSearchScorer
+                elif location == 'transformers.generation_utils':
+                    from transformers.generation_utils import BeamSearchScorer
 
-        except ImportError as e:
-            print(f"[VOICE DEBUG] ✗ Could not import BeamSearchScorer from transformers.generation: {e}")
+                print(f"[VOICE DEBUG] Successfully imported BeamSearchScorer from {location}")
+                break
+            except ImportError:
+                continue
+
+        if BeamSearchScorer is None:
+            print(f"[VOICE DEBUG] ✗ BeamSearchScorer not found in any known location")
             print(f"[VOICE DEBUG] transformers version: {transformers.__version__}")
+            print(f"[VOICE DEBUG] Tried locations: {', '.join(import_locations)}")
+            return False
+
+        # Patch it into the transformers module's namespace
+        # Multiple strategies to ensure it's accessible
+
+        # Strategy 1: Direct attribute assignment
+        transformers.BeamSearchScorer = BeamSearchScorer
+
+        # Strategy 2: Add to module's __dict__
+        transformers.__dict__['BeamSearchScorer'] = BeamSearchScorer
+
+        # Strategy 3: Update sys.modules entry
+        sys.modules['transformers'].BeamSearchScorer = BeamSearchScorer
+
+        # Verify the patch worked
+        try:
+            from transformers import BeamSearchScorer as Test
+            print("[VOICE DEBUG] ✓ BeamSearchScorer compatibility patch verified and working!")
+            return True
+        except ImportError:
+            print("[VOICE DEBUG] ✗ Patch applied but verification failed")
             return False
         except Exception as e:
             print(f"[VOICE DEBUG] ✗ Unexpected error during patch: {e}")
